@@ -35,7 +35,7 @@ rm(list=ls())
 
 
 #Matrix size is defined as a function of the step between 2 pixels.
-step = 0.1
+step = 0.025
 size = 1/step + 1
 size
 
@@ -62,24 +62,17 @@ pop
 #Scenario 2: population concentration around mean/median values
 #This case is modeled by a product of independent beta laws for each preference parameter.
 
+#Only works in small dimension (step = 0.1) though !!! TO BE IMPROVED
+
 pop2 <- matrix(,n1,n2) #an empty matrix
  
 
-###Code that computes discrete densities###
-
+###Code that computes discrete densities for scenario 2###
 
 #We create our quantile vectors (in line)
 
 alphas_vector <- t(matrix(alphas))
 betas_vector <- t(matrix(betas))
-
-#Remark : Repartition functions can be represented (the same ones, with identical shape parameters)
-fdr_beta_dim1 <-pbeta(alphas, shape1 = a, shape2 =b)
-plot(fdr_beta_dim1,alphas)
-
-fdr_beta_dim2 <-pbeta(betas, shape1 = c, shape2 =d)
-plot(fdr_beta_dim2,betas)
-
 
 #Starting from the repartition function, we define the discrete density of a beta (one for each of the 2 dimensions).
 
@@ -141,11 +134,9 @@ a=b=c=d=2
 result_at_0_dim1 <- densite_beta_dim1(0, a, b, step)
 result_at_0_dim2 <- densite_beta_dim2(0, a, b, step)
 
-proba_values_dim1[1]=result_at_0_dim1
-proba_values_dim2[1]=result_at_0_dim2
 
 # Storing other values iteratively in a matrix 
-num_iterations <- 10  # Change this value as needed
+num_iterations <- 40  # Change this value as needed
 proba_values_dim1 <- matrix(0, nrow = 1, ncol = num_iterations + 1)
 proba_values_dim2 <- matrix(0, nrow = 1, ncol = num_iterations + 1)
 
@@ -153,6 +144,9 @@ for (i in 1:num_iterations) {
   proba_values_dim1[1, i + 1] <- densite_beta_dim1(i, a, b, step)
   proba_values_dim2[1, i + 1] <- densite_beta_dim2(i, c, d, step)
 }
+
+proba_values_dim1[1]=result_at_0_dim1
+proba_values_dim2[1]=result_at_0_dim2
 
 sum(proba_values_dim1)
 sum(proba_values_dim2)
@@ -164,10 +158,16 @@ pop2 = t(proba_values_dim2)%*%proba_values_dim1
 #There is indeed a higher population concentration on median values compared to the uniform case.
 
 sum(pop2) 
-#just checking, we're good :)
+#just checking, we're good in all dimensions :)
         
 
 
+#Remark : Repartition functions can be represented (the same ones, with identical shape parameters)
+fdr_beta_dim1 <-pbeta(alphas, shape1 = a, shape2 =b)
+plot(fdr_beta_dim1,alphas)
+
+fdr_beta_dim2 <-pbeta(betas, shape1 = c, shape2 =d)
+plot(fdr_beta_dim2,betas)
 
 
 
@@ -182,9 +182,9 @@ sum(pop2)
 
 #we initialize the parameters of our "borders", i.e. the prices of the four goods, individual income and marginal damage as well as impact parameters (satisfying model assumptions)
 p_go = 3
-p_gd= 2
+p_gd = 2
 p_bo = 1.99
-p_bd= 1  #this price is fixed
+p_bd = 1  #this price is fixed
 R = 20
 d_prime = 0.01
 gamma_bo = 4
@@ -206,6 +206,7 @@ gamma_gd = 0.8
 #Then we compute the mixed consumption zones matrices 
 
 #In the end, we'll check that the sum of these four matrices gives 1s in the exclusive consumption zones and integers from 2 to 4 elsewhere.
+
 
 #1.Exclusive consumption zones
 
@@ -267,7 +268,7 @@ for (beta in betas_rev)  {
   }
 }
 
-#Our exclusive consumption matrices are almost fine, they tie in with our graphs, except that they are rotated to 90 degrees (TO BE SOLVED)
+#Our exclusive consumption matrices are almost fine, they perfectly tie in with our graphs.
 #Summing the 4 matrices, we have a few zero coefficients, corresponding to zones in which several goods are consumed.
 
 
@@ -303,7 +304,7 @@ mat2<- mat_gd_only %>%
 colnames(mat2)<-alphas
 row.names(mat2)<-betas
 
-levelplot(mat2, main="GD exclusive consumption zone (in dark blue)", xlab="alpha", ylab="beta")    
+levelplot(mat2, main="GD exclusive consumption zone (in blue)", xlab="alpha", ylab="beta")    
 
 
 #BO
@@ -334,7 +335,7 @@ mat4<- mat_bd_only %>%
 colnames(mat4)<-alphas
 row.names(mat4)<-betas
 
-levelplot(mat4, main="BD exclusive consumption zone (in dark blue)", xlab="alpha", ylab="beta")  
+levelplot(mat4, main="BD exclusive consumption zone (in blue)", xlab="alpha", ylab="beta")  
 
 
 
@@ -345,7 +346,7 @@ levelplot(mat4, main="BD exclusive consumption zone (in dark blue)", xlab="alpha
 
 ### 1) Exclusive consumption only
  
-###### 1. Uniformly distributed population ######
+###### Scenario 1  : Uniformly distributed population ######
 
 #Consumption shares
 pop_go_unif = pop*mat_go_only
@@ -383,16 +384,18 @@ excl_conso_gd_scenar2
 excl_conso_bd_scenar2
 
 
+
 ### Common to all scenarios  : 
 
 ###We define the quantities consumed in each exclusive zone by each consumer.
+
 indiv_quantity_go = R/p_go
 indiv_quantity_gd = R/p_gd
 indiv_quantity_bo = R/p_bo
 indiv_quantity_bd = R
 
 
-###Multiplying the population matrix coefficients by these quantities yields total quantities for each good : 
+### Multiplying the population matrix coefficients by these quantities yields total quantities for each good : 
 
 #Scenario 1 : for a uniform distribution, it is sufficient to sum all the coefficients wihtout using the pop matrix as we know the population is equally distributed
 
@@ -402,21 +405,72 @@ total_quantity_bo = sum(indiv_quantity_bo*mat_bo_only)
 total_quantity_bd = sum(indiv_quantity_bd*mat_bd_only) 
 total_quantity_consumed = total_quantity_go + total_quantity_gd + total_quantity_bo + total_quantity_bd
 
-#Scenario 2: TO BE DONE
+total_quantity_go
+total_quantity_gd
+total_quantity_bo
+total_quantity_bd
+total_quantity_consumed
 
 
 
+#Scenario 2 
 
+#We first rescale population matrices by the size of the population (the square of the size variable) so that a bit more than 1 individual lie in each pixel in the center (max seems to be around 2.3), whereas one can find values between 0 and 1 when one gets further from the middle
+pop_go_scenar2_rescaled = pop_go_scenar2*size^2
+pop_gd_scenar2_rescaled = pop_gd_scenar2*size^2
+pop_bo_scenar2_rescaled = pop_bo_scenar2*size^2
+pop_bd_scenar2_rescaled= pop_bd_scenar2*size^2
+
+#And then we apply the same principle
+
+total_quantity_go_scenar2 = sum(indiv_quantity_go*pop_go_scenar2_rescaled)
+total_quantity_gd_scenar2 = sum(indiv_quantity_gd*pop_gd_scenar2_rescaled) 
+total_quantity_bo_scenar2 = sum(indiv_quantity_bo*pop_bo_scenar2_rescaled)
+total_quantity_bd_scenar2 = sum(indiv_quantity_bd*pop_bd_scenar2_rescaled) 
+total_quantity_consumed_scenar2 = total_quantity_go_scenar2 + total_quantity_gd_scenar2 + total_quantity_bo_scenar2 + total_quantity_bd_scenar2
+
+total_quantity_go_scenar2
+total_quantity_gd_scenar2
+total_quantity_bo_scenar2
+total_quantity_bd_scenar2
+total_quantity_consumed_scenar2
 
 
 
 ###Finally, in each scenario, weighting these total quantities by the coefficients of environmental impact yields us a total environmental impact value of each good:
+
+#Scenario 1
 
 total_impact_go = gamma_go*total_quantity_go
 total_impact_gd = gamma_gd*total_quantity_gd
 total_impact_bo = gamma_bo*total_quantity_bo
 total_impact_bd = gamma_bd*total_quantity_bd
 total_impact_consumption = total_impact_go + total_impact_gd + total_impact_bo + total_impact_bd
+
+total_impact_go
+total_impact_gd
+total_impact_bo
+total_impact_bd
+total_impact_consumption
+
+#Scenario 2
+
+total_impact_go_scenar2 = gamma_go*total_quantity_go_scenar2
+total_impact_gd_scenar2 = gamma_gd*total_quantity_gd_scenar2
+total_impact_bo_scenar2 = gamma_bo*total_quantity_bo_scenar2
+total_impact_bd_scenar2 = gamma_bd*total_quantity_bd_scenar2
+total_impact_consumption_scenar2 = total_impact_go_scenar2 + total_impact_gd_scenar2 + total_impact_bo_scenar2 + total_impact_bd_scenar2
+
+total_impact_go_scenar2
+total_impact_gd_scenar2
+total_impact_bo_scenar2
+total_impact_bd_scenar2
+total_impact_consumption_scenar2
+
+
+
+
+
 
 
 #To study the different cases within each scenario :
