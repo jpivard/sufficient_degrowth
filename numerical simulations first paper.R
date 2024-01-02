@@ -103,40 +103,46 @@ densite_beta_dim2 <- function(n, c, d, step) {
 }
 
 
-#Assign values to shape parameters according to the scenario
+######### SCENARIO CHOICE - Assign values to shape parameters according to the scenario ############
 
 #Basic scenario 2: two beta laws with the two same shape parameters (bell curves) to model the concentration in the middle of the distribution
-a=b=c=d=2
+#a=b=c=d=2
 
 #Variant (2b): the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
 #a=b=2
 #c=d=1
 
+
 #Scenario 2B: Lower/laxer environmental norm (concentration on the left, beta law with shape parameters 5 and 1 on alpha, uniform on beta).
 #a=5
 #b=c=d=1
 
-#Sc?nario 2C : Higher/stringent environmental norm (right-hand concentration)
+#Scenario 2C : Higher/stringent environmental norm (right-hand concentration)
 #a=c=d=1
 #b=5
 
-#Sc?nario 2D : social image matters less (widespread discretion)
+
+
+#Scenario 2D : social image matters less (widespread discretion)
 #a=b=c=1
 #d=5
 
-#Sc?nario 2E: social image matters more ("Red Queen Economy", Keep Up With the Joneses...)
-#a=b=d=1
-#c=5
+#Scenario 2E: social image matters more ("Red Queen Economy", Keep Up With the Joneses...)
+a=b=d=1
+c=5
+
+#######################################
+
 
 
 
 # Calling the functions at n = 0 and storing the result
 result_at_0_dim1 <- densite_beta_dim1(0, a, b, step)
-result_at_0_dim2 <- densite_beta_dim2(0, a, b, step)
+result_at_0_dim2 <- densite_beta_dim2(0, c, d, step)
 
 
 # Storing other values iteratively in a matrix 
-num_iterations <- 40  # Change this value as needed
+num_iterations <- size - 1  # Change this value as needed
 proba_values_dim1 <- matrix(0, nrow = 1, ncol = num_iterations + 1)
 proba_values_dim2 <- matrix(0, nrow = 1, ncol = num_iterations + 1)
 
@@ -468,7 +474,20 @@ total_impact_bd_scenar2
 total_impact_consumption_scenar2
 
 
+###As an additional sufficiency metrics, let's compute the total impact per capita
 
+#Scenario 1 : we simply divide aggregate impact by the population inside exclusive consumption zones (here we can simply divide total impact by the percentage of exclusive pixels as we have one pixel = one person)
+
+total_impact_percapita = total_impact_consumption/((excl_cons_go_scenar1+excl_cons_gd_scenar1+excl_cons_bo_scenar1+excl_cons_bd_scenar1)*1/100*size^2)
+total_impact_percapita
+
+#Scenario 2 : To obtain the impact per capita, here we need  to know how many exclusive consumers there are taking into account the rescaled matrices 
+
+number_exclusives = sum(pop_go_scenar2_rescaled)+sum(pop_gd_scenar2_rescaled)+sum(pop_bo_scenar2_rescaled)+sum(pop_bd_scenar2_rescaled)
+number_exclusives #different from size square
+
+total_impact_percapita_scenar2 = total_impact_consumption/number_exclusives
+total_impact_percapita_scenar2
 
 
 
