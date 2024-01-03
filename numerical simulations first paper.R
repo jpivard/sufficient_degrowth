@@ -106,7 +106,7 @@ densite_beta_dim2 <- function(n, c, d, step) {
 ######### SCENARIO CHOICE - Assign values to shape parameters according to the scenario ############
 
 #Basic scenario 2: two beta laws with the two same shape parameters (bell curves) to model the concentration in the middle of the distribution
-#a=b=c=d=2
+a=b=c=d=2
 
 #Variant (2b): the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
 #a=b=2
@@ -128,8 +128,9 @@ densite_beta_dim2 <- function(n, c, d, step) {
 #d=5
 
 #Scenario 2E: social image matters more ("Red Queen Economy", Keep Up With the Joneses...)
-a=b=d=1
-c=5
+#a=b=d=1
+#c=5
+
 
 #######################################
 
@@ -200,7 +201,7 @@ gamma_gd = 0.8
 
 
 
-######## COMPUTATION OF CONSUMPTION ZONE MATRICES (first without quantities?) ###############
+######## COMPUTATION OF CONSUMPTION ZONE MATRICES  ###############
 
 
 #1st method (inspired from the simpler model):
@@ -372,7 +373,7 @@ excl_cons_bo_scenar1
 excl_cons_bd_scenar1
 
 
-###### Scenario 2 : a concentration of the population around certain values (product of independent Beta laws) ######
+###### Scenario 2 : A concentration of the population around certain values (product of independent Beta laws) ######
 
 pop_go_scenar2 = pop2*mat_go_only
 pop_gd_scenar2 = pop2*mat_gd_only
@@ -421,7 +422,7 @@ total_quantity_consumed
 
 #Scenario 2 
 
-#We first rescale population matrices by the size of the population (the square of the size variable) so that a bit more than 1 individual lie in each pixel in the center (max seems to be around 2.3), whereas one can find values between 0 and 1 when one gets further from the middle
+#We first rescale population matrices by the size of the population (the square of the size variable) so that a bit more than 1 individual lie in each pixel in a concentrated area (max seems to be around 2.3), whereas one can find values between 0 and 1 when one gets further from the concentrated area
 pop_go_scenar2_rescaled = pop_go_scenar2*size^2
 pop_gd_scenar2_rescaled = pop_gd_scenar2*size^2
 pop_bo_scenar2_rescaled = pop_bo_scenar2*size^2
