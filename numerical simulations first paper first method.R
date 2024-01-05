@@ -1,12 +1,14 @@
 ########## A model of consumption choices and sufficiency with environmental and social image preferences - First simulation method ###########
 
+# Install ggplot2 package if not already installed
+#install.packages("ggplot2")
+
 
 library(lattice)
 library(tidyverse)
 library (gtools)
 library(RColorBrewer)
-
-
+library(ggplot2)
 
 
 ######## INTRODUCTION ###############
@@ -37,7 +39,7 @@ alphas <- seq(from = 0,to = 1,by=step)
 betas_rev <- seq(from = 1,to = 0,by=-step) #reversed so that coordinates appear in the right order
 betas <- seq(from = 0,to = 1,by=step) #only for graphs
 
-######## POPULATION DISTRIBUTIONS  ##############
+######## POPULATION DISTRIBUTIONS (Part 1) ##############
 
 #Here, square matrices of dimension 'size' are defined. 
 
@@ -51,10 +53,8 @@ pop
 
 
 
-#Scenario 2: population concentration around mean/median values
+#Scenario 2: population concentration around some values
 #This case is modeled by a product of independent beta laws for each preference parameter.
-
-#Only works in small dimension (step = 0.1) though !!! TO BE IMPROVED
 
 pop2 <- matrix(,n1,n2) #an empty matrix
  
@@ -124,7 +124,7 @@ a=b=c=d=2
 #c=5
 
 
-#######################################
+####################################### POPULATION DISTRIBUTIONS (Part 2) ###########
 
 
 
@@ -337,8 +337,7 @@ row.names(mat4)<-betas
 levelplot(mat4, main="BD exclusive consumption zone (in blue)", xlab="alpha", ylab="beta")  
 
 
-
-######COMPUTATION OF AGGREGATED QUANTITIES IN DIFFERENT SCENARIOS########
+########### COMPUTATION OF AGGREGATED QUANTITIES IN DIFFERENT SCENARIOS########
 
 #In each case, we first compute the consumption shares and the quantities consumed.
 #And then we derive the subsequent total environmental impacts.
@@ -358,11 +357,36 @@ excl_cons_go_scenar1 = sum(pop_go_unif)*100
 excl_cons_gd_scenar1 = sum(pop_gd_unif)*100
 excl_cons_bo_scenar1 = sum(pop_bo_unif)*100
 excl_cons_bd_scenar1 = sum(pop_bd_unif)*100
+total_exclusive = excl_cons_go_scenar1 + excl_cons_gd_scenar1  + excl_cons_bo_scenar1 + excl_cons_bd_scenar1 
 
 excl_cons_go_scenar1 
 excl_cons_gd_scenar1
 excl_cons_bo_scenar1 
 excl_cons_bd_scenar1
+total_exclusive
+
+
+
+#We represent these shares in a diagram (colors to be changed...)
+
+categories <- c("Good GO", "Good GD", "Good BO", "Good BD", "Mixed")
+percentages <- c(excl_cons_go_scenar1, excl_cons_gd_scenar1, excl_cons_bo_scenar1, excl_cons_bd_scenar1, 100-total_exclusive)
+
+# Create a data frame
+data <- data.frame(Category = categories, Percentage = percentages)
+
+# Create a bar plot (caption to be changed according to the case tested)
+plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Distribution of consumers - Reference case, Scenario 1",
+       x = "Categories",
+       y = "Percentage") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
+  theme_minimal()
+
+print(plot)
+
+
 
 
 ###### Scenario 2 : A concentration of the population around certain values (product of independent Beta laws) ######
@@ -376,12 +400,32 @@ excl_conso_go_scenar2 = sum(pop_go_scenar2)*100
 excl_conso_bo_scenar2 = sum(pop_bo_scenar2)*100
 excl_conso_gd_scenar2 = sum(pop_gd_scenar2)*100
 excl_conso_bd_scenar2 = sum(pop_bd_scenar2)*100
+total_exclusive2 = excl_conso_go_scenar2 + excl_conso_gd_scenar2  + excl_conso_bo_scenar2 + excl_conso_bd_scenar2
 
 excl_conso_go_scenar2
 excl_conso_bo_scenar2
 excl_conso_gd_scenar2
 excl_conso_bd_scenar2
+total_exclusive2
 
+#We represent these shares in a diagram (colors to be changed...)
+
+categories2 <- c("Good GO", "Good GD", "Good BO", "Good BD", "Mixed")
+percentages2 <- c(excl_conso_go_scenar2, excl_conso_gd_scenar2, excl_conso_bo_scenar2, excl_conso_bd_scenar2, 100-total_exclusive2)  
+
+# Create a data frame
+data2 <- data.frame(Category = categories2, Percentage = percentages2)
+
+# Create a bar plot (caption to be changed according to the case/scenario tested)
+plot2 <- ggplot(data2, aes(x = Category, y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Distribution of consumers - Reference case, Scenario 2A",
+       x = "Categories",
+       y = "Percentage") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
+  theme_minimal()
+
+print(plot2)
 
 
 ### Common to all scenarios  : 
@@ -436,6 +480,9 @@ total_quantity_consumed_scenar2
 
 
 
+
+
+
 ###Finally, in each scenario, weighting these total quantities by the coefficients of environmental impact yields us a total environmental impact value of each good:
 
 #Scenario 1
@@ -452,6 +499,20 @@ total_impact_bo
 total_impact_bd
 total_impact_consumption
 
+
+#Plot the impacts 
+
+data_impacts <- data.frame(
+  category = c("Good BD", "Good  BO", "Good GD ", "Good  GO"),
+  values = c(total_impact_bd, total_impact_bo, total_impact_gd, total_impact_go)
+)
+
+bar_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
+
+barplot(data_impacts$values, names.arg = data_impacts$category,  col = bar_colors, main = "Environmental impacts by good type - Ref case, Sce. 1", ylab = "Impacts", border = "black")
+
+
+
 #Scenario 2
 
 total_impact_go_scenar2 = gamma_go*total_quantity_go_scenar2
@@ -466,6 +527,18 @@ total_impact_bo_scenar2
 total_impact_bd_scenar2
 total_impact_consumption_scenar2
 
+#Plot
+data_impacts <- data.frame(
+  category = c("Good BD", "Good  BO", "Good GD ", "Good  GO"),
+  values = c(total_impact_bd_scenar2, total_impact_bo_scenar2, total_impact_gd_scenar2, total_impact_go_scenar2)
+)
+
+bar_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
+
+barplot(data_impacts$values, names.arg = data_impacts$category,  col = bar_colors, main = "Env.impacts by good type - Ref case, Sce. 2A", ylab = "Impacts", border = "black")
+
+
+
 
 ###As an additional sufficiency metrics, let's compute the total impact per capita
 
@@ -474,7 +547,7 @@ total_impact_consumption_scenar2
 total_impact_percapita = total_impact_consumption/((excl_cons_go_scenar1+excl_cons_gd_scenar1+excl_cons_bo_scenar1+excl_cons_bd_scenar1)*1/100*size^2)
 total_impact_percapita
 
-#Scenario 2 : To obtain the impact per capita, here we need  to know how many exclusive consumers there are taking into account the rescaled matrices 
+#Scenario 2 : To obtain the impact per capita, here we need to know how many exclusive consumers there are taking into account the rescaled matrices 
 
 number_exclusives = sum(pop_go_scenar2_rescaled)+sum(pop_gd_scenar2_rescaled)+sum(pop_bo_scenar2_rescaled)+sum(pop_bd_scenar2_rescaled)
 number_exclusives #different from size square
@@ -483,10 +556,9 @@ total_impact_percapita_scenar2 = total_impact_consumption/number_exclusives
 total_impact_percapita_scenar2
 
 
-
-
 #To study the different cases within each scenario :
 #we go to the 'parametrization' section above and directly change the parameters according to what we want to test, and then rerun the code (corresponding to the chosen scenario) up to this point.
+
 
 
 
