@@ -39,6 +39,35 @@ alphas <- seq(from = 0,to = 1,by=step)
 betas_rev <- seq(from = 1,to = 0,by=-step) #reversed so that coordinates appear in the right order
 betas <- seq(from = 0,to = 1,by=step) #only for graphs
 
+
+######### SCENARIO CHOICE - Assign values to shape parameters according to the scenario ############
+
+#Basic scenario 2 (2A): two beta laws with the two same shape parameters (bell curves) to model the concentration in the middle of the distribution
+a=b=c=d=2
+
+#Variant (2b): the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
+#a=b=2
+#c=d=1
+
+
+#Scenario 2B: Lower/laxer environmental norm (concentration on the left, beta law with shape parameters 5 and 1 on alpha, uniform on beta).
+#a=5
+#b=c=d=1
+
+#Scenario 2C : Higher/stringent environmental norm (right-hand concentration)
+#a=c=d=1
+#b=5
+
+
+
+#Scenario 2D : social image matters less (widespread discretion)
+#a=b=c=1
+#d=5
+
+#Scenario 2E: social image matters more ("Red Queen Economy", Keep Up With the Joneses...)
+#a=b=d=1
+#c=5
+
 ######## POPULATION DISTRIBUTIONS (Part 1) ##############
 
 #Here, square matrices of dimension 'size' are defined. 
@@ -95,34 +124,6 @@ densite_beta_dim2 <- function(n, c, d, step) {
 }
 
 
-######### SCENARIO CHOICE - Assign values to shape parameters according to the scenario ############
-
-#Basic scenario 2: two beta laws with the two same shape parameters (bell curves) to model the concentration in the middle of the distribution
-a=b=c=d=2
-
-#Variant (2b): the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
-#a=b=2
-#c=d=1
-
-
-#Scenario 2B: Lower/laxer environmental norm (concentration on the left, beta law with shape parameters 5 and 1 on alpha, uniform on beta).
-#a=5
-#b=c=d=1
-
-#Scenario 2C : Higher/stringent environmental norm (right-hand concentration)
-#a=c=d=1
-#b=5
-
-
-
-#Scenario 2D : social image matters less (widespread discretion)
-#a=b=c=1
-#d=5
-
-#Scenario 2E: social image matters more ("Red Queen Economy", Keep Up With the Joneses...)
-#a=b=d=1
-#c=5
-
 
 ####################################### POPULATION DISTRIBUTIONS (Part 2) ###########
 
@@ -169,16 +170,24 @@ fdr_beta_dim2 <-pbeta(betas, shape1 = c, shape2 =d)
 plot(fdr_beta_dim2,betas)
 
 
-
-
-
+#Astuce pour pas avoir à tout relancer = faire une fonction qui demande les paramètres et renvoie tous les résultats
+programme<- function() {
+  
+  x <- as.numeric(readline(prompt = "valeur de x ?"))
+  y<- as.numeric(readline(prompt = "valeur de y ?"))
+  z<- as.numeric(readline(prompt = "valeur de z ?"))
+  
+  fonction <- function(x,y,z){
+    return(x*y + z*x)
+  }
+  print(fonction(x, y, z))
+}
 
 
 
 ############# BORDER PARAMETRIZATION ####################
 
 #We define our "borders", delimiting the consumption zones according to the exogenous model parameters (so that we can study the different cases by changing only the following values).
-
 #we initialize the parameters of our "borders", i.e. the prices of the four goods, individual income and marginal damage as well as impact parameters (satisfying model assumptions)
 p_go = 3
 p_gd = 2
@@ -186,10 +195,10 @@ p_bo = 1.99
 p_bd = 1  #this price is fixed
 R = 20
 d_prime = 0.01
-gamma_bo = 4
-gamma_bd = 2
-gamma_go = 1.6
-gamma_gd = 0.8
+gamma_bo = 3.6
+gamma_bd = 1.8
+gamma_go = 1.44
+gamma_gd = 0.72
 
 
 
@@ -367,13 +376,16 @@ total_exclusive
 
 
 
-#We represent these shares in a diagram (colors to be changed...)
+#We represent these shares in a diagram 
 
 categories <- c("Good GO", "Good GD", "Good BO", "Good BD", "Mixed")
 percentages <- c(excl_cons_go_scenar1, excl_cons_gd_scenar1, excl_cons_bo_scenar1, excl_cons_bd_scenar1, 100-total_exclusive)
 
 # Create a data frame
 data <- data.frame(Category = categories, Percentage = percentages)
+
+# Set colors
+custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen", "blue") 
 
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
@@ -382,7 +394,8 @@ plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
        x = "Categories",
        y = "Percentage") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
-  theme_minimal()
+  theme_minimal()+
+  scale_fill_manual(values = custom_colors)
 
 print(plot)
 
@@ -408,7 +421,7 @@ excl_conso_gd_scenar2
 excl_conso_bd_scenar2
 total_exclusive2
 
-#We represent these shares in a diagram (colors to be changed...)
+#We represent these shares in a diagram 
 
 categories2 <- c("Good GO", "Good GD", "Good BO", "Good BD", "Mixed")
 percentages2 <- c(excl_conso_go_scenar2, excl_conso_gd_scenar2, excl_conso_bo_scenar2, excl_conso_bd_scenar2, 100-total_exclusive2)  
@@ -416,14 +429,18 @@ percentages2 <- c(excl_conso_go_scenar2, excl_conso_gd_scenar2, excl_conso_bo_sc
 # Create a data frame
 data2 <- data.frame(Category = categories2, Percentage = percentages2)
 
+custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen", "blue")  
+
+
 # Create a bar plot (caption to be changed according to the case/scenario tested)
 plot2 <- ggplot(data2, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Distribution of consumers - Reference case, Scenario 2A",
+  labs(title = "Distribution of consumers - Higher efficiency, Scenario 2B",
        x = "Categories",
        y = "Percentage") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
-  theme_minimal()
+  theme_minimal()+
+  scale_fill_manual(values = custom_colors)
 
 print(plot2)
 
@@ -463,6 +480,7 @@ pop_go_scenar2_rescaled = pop_go_scenar2*size^2
 pop_gd_scenar2_rescaled = pop_gd_scenar2*size^2
 pop_bo_scenar2_rescaled = pop_bo_scenar2*size^2
 pop_bd_scenar2_rescaled= pop_bd_scenar2*size^2
+
 
 #And then we apply the same principle
 
@@ -509,7 +527,9 @@ data_impacts <- data.frame(
 
 bar_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 
-barplot(data_impacts$values, names.arg = data_impacts$category,  col = bar_colors, main = "Environmental impacts by good type - Ref case, Sce. 1", ylab = "Impacts", border = "black")
+ylim_values <- c(0, 50000)
+
+barplot(data_impacts$values, names.arg = data_impacts$category,  col = bar_colors, main = "Env. impacts by good type - Reference case, Sce. 1", ylab = "Impacts", border = "black",ylim = ylim_values)
 
 
 
@@ -533,9 +553,11 @@ data_impacts <- data.frame(
   values = c(total_impact_bd_scenar2, total_impact_bo_scenar2, total_impact_gd_scenar2, total_impact_go_scenar2)
 )
 
+ylim_values <- c(0, 50000) #to be changed according to the analysis
+
 bar_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 
-barplot(data_impacts$values, names.arg = data_impacts$category,  col = bar_colors, main = "Env.impacts by good type - Ref case, Sce. 2A", ylab = "Impacts", border = "black")
+barplot(data_impacts$values, names.arg = data_impacts$category,  col = bar_colors, main = "Env.impacts by good type - Reference case, Sce. 2B", ylab = "Impacts", border = "black",ylim = ylim_values)
 
 
 
@@ -552,12 +574,132 @@ total_impact_percapita
 number_exclusives = sum(pop_go_scenar2_rescaled)+sum(pop_gd_scenar2_rescaled)+sum(pop_bo_scenar2_rescaled)+sum(pop_bd_scenar2_rescaled)
 number_exclusives #different from size square
 
-total_impact_percapita_scenar2 = total_impact_consumption/number_exclusives
+total_impact_percapita_scenar2 = total_impact_consumption_scenar2/number_exclusives
 total_impact_percapita_scenar2
+
+#Compute the variation (in percentage) of impacts per capita when changing pop distribution from uniform to concentration
+variation_impactpercapita = ((total_impact_percapita_scenar2-total_impact_percapita)/total_impact_percapita)*100
+variation_impactpercapita
+
 
 
 #To study the different cases within each scenario :
 #we go to the 'parametrization' section above and directly change the parameters according to what we want to test, and then rerun the code (corresponding to the chosen scenario) up to this point.
+
+
+########### COMPARING CASES AND SCENARIOS #########
+
+#To ensure better comparability, let's plot per capita variables (+variations?) in the different cases, in both scenarios.
+#To do this, we have to store the results for each case in different variables, that we will finally use in the code for the plot.
+
+#1. Per capita impacts
+
+#Scenario 1 results : store in the suited variable according to case tested.
+#total_impact_percapita_unif_ref <- total_impact_percapita : OK
+#total_impact_percapita_unif_case2 <-  total_impact_percapita : OK
+#total_impact_percapita_unif_case3 <-  total_impact_percapita : OK
+#total_impact_percapita_unif_case4 <-  total_impact_percapita : OK
+#total_impact_percapita_unif_case5 <-  total_impact_percapita : OK
+#total_impact_percapita_unif_case6 <-  total_impact_percapita : OK
+#total_impact_percapita_unif_case7 <-  total_impact_percapita : OK
+
+#Scenario 2A results
+#total_impact_percapita_scenar2A_ref <- total_impact_percapita_scenar2 : OK
+#total_impact_percapita_scenar2A_case2 <-  total_impact_percapita_scenar2 : OK
+#total_impact_percapita_scenar2A_case3 <-  total_impact_percapita_scenar2 : OK
+#total_impact_percapita_scenar2A_case4 <-  total_impact_percapita_scenar2 : OK
+#total_impact_percapita_scenar2A_case5 <-  total_impact_percapita_scenar2 : OK
+#total_impact_percapita_scenar2A_case6 <-  total_impact_percapita_scenar2 : OK
+#total_impact_percapita_scenar2A_case7 <-  total_impact_percapita_scenar2 : OK
+
+
+
+
+
+#Scenario 2B results
+#total_impact_percapita_scenar2B_ref <- total_impact_percapita_scenar2
+#total_impact_percapita_scenar2B_case2 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2B_case3 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2B_case4 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2B_case5 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2B_case6 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2B_case7 <-  total_impact_percapita_scenar2
+
+#Scenario 2C results
+#total_impact_percapita_scenar2C_ref <- total_impact_percapita_scenar2
+#total_impact_percapita_scenar2C_case2 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2C_case3 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2C_case4 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2C_case5 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2C_case6 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2C_case7 <-  total_impact_percapita_scenar2
+
+#Scenario 2D results
+#total_impact_percapita_scenar2D_ref <- total_impact_percapita_scenar2
+#total_impact_percapita_scenar2D_case2 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2D_case3 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2D_case4 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2D_case5 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2D_case6 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2D_case7 <-  total_impact_percapita_scenar2
+
+#Scenario 2E results
+#total_impact_percapita_scenar2E_ref <- total_impact_percapita_scenar2
+#total_impact_percapita_scenar2E_case2 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2E_case3 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2E_case4 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2E_case5 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2E_case6 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2E_case7 <-  total_impact_percapita_scenar2
+
+
+
+#Let's start by plotting per capita impacts in all cases in which population is uniformly distributed (Scenario 1).
+
+categories2 <- c("Case 1", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6", "Case 7")
+numbers2 <- c(total_impact_percapita_unif_ref, total_impact_percapita_unif_case2, total_impact_percapita_unif_case3, total_impact_percapita_unif_case4, total_impact_percapita_unif_case5, total_impact_percapita_unif_case6, total_impact_percapita_unif_case7)  
+
+# Create a data frame
+data2 <- data.frame(Category = categories2, Numbers = numbers2)
+
+# Create a three-color gradient palette (from green to dark brown)
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(numbers2))
+
+# Create a bar plot with the adjusted gradient fill
+plot_pcimpact_unif <- ggplot(data2, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Per capita impacts in the different cases, Uniform distribution",
+       x = "Categories",
+       y = "Numbers") +
+  theme_minimal() +
+  scale_fill_gradientn(colors = custom_gradient_colors, guide = "legend")
+
+print(plot_pcimpact_unif)
+
+
+
+#We then do the same in scenario 2A.
+
+categories2 <- c("Case 1", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6", "Case 7")
+numbers2 <- c(total_impact_percapita_scenar2A_ref, total_impact_percapita_scenar2A_case2, total_impact_percapita_scenar2A_case3, total_impact_percapita_scenar2A_case4, total_impact_percapita_scenar2A_case5, total_impact_percapita_scenar2A_case6, total_impact_percapita_scenar2A_case7)  
+
+# Create a data frame
+data2 <- data.frame(Category = categories2, Numbers = numbers2)
+
+# Create a three-color gradient palette (from green to dark brown)
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(numbers2))
+
+# Create a bar plot with the adjusted gradient fill
+plot_pcimpact_sce2 <- ggplot(data2, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Per capita impacts in the different cases, Scenario 2A",
+       x = "Categories",
+       y = "Numbers") +
+  theme_minimal() +
+  scale_fill_gradientn(colors = custom_gradient_colors, guide = "legend")
+
+print(plot_pcimpact_sce2)
+
 
 
 
