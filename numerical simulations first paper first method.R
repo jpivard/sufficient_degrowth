@@ -43,7 +43,7 @@ betas <- seq(from = 0,to = 1,by=step) #only for graphs
 ######### SCENARIO CHOICE - Assign values to shape parameters according to the scenario ############
 
 #Basic scenario 2 (2A): two beta laws with the two same shape parameters (bell curves) to model the concentration in the middle of the distribution
-a=b=c=d=2
+#a=b=c=d=2
 
 #Variant (2b): the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
 #a=b=2
@@ -65,8 +65,8 @@ a=b=c=d=2
 #d=5
 
 #Scenario 2E: social image matters more ("Red Queen Economy", Keep Up With the Joneses...)
-#a=b=d=1
-#c=5
+a=b=d=1
+c=5
 
 ######## POPULATION DISTRIBUTIONS (Part 1) ##############
 
@@ -193,12 +193,12 @@ p_go = 3
 p_gd = 2
 p_bo = 1.99
 p_bd = 1  #this price is fixed
-R = 20
+R = 16
 d_prime = 0.01
-gamma_bo = 3.6
-gamma_bd = 1.8
-gamma_go = 1.44
-gamma_gd = 0.72
+gamma_bo = 4
+gamma_bd = 2
+gamma_go = 1.6
+gamma_gd = 0.8
 
 
 
@@ -390,7 +390,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen", "blue")
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Distribution of consumers - Reference case, Scenario 1",
+  labs(title = "Distribution of consumers - 20% drop in income, Scenario 1",
        x = "Categories",
        y = "Percentage") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -435,7 +435,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen", "blue")
 # Create a bar plot (caption to be changed according to the case/scenario tested)
 plot2 <- ggplot(data2, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Distribution of consumers - Higher efficiency, Scenario 2B",
+  labs(title = "Distribution of consumers - 20% drop in income, Scenario 2E",
        x = "Categories",
        y = "Percentage") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -602,6 +602,7 @@ variation_impactpercapita
 #total_impact_percapita_unif_case5 <-  total_impact_percapita : OK
 #total_impact_percapita_unif_case6 <-  total_impact_percapita : OK
 #total_impact_percapita_unif_case7 <-  total_impact_percapita : OK
+#total_impact_percapita_unif_degrowth <- total_impact_percapita : OK
 
 #Scenario 2A results
 #total_impact_percapita_scenar2A_ref <- total_impact_percapita_scenar2 : OK
@@ -611,28 +612,33 @@ variation_impactpercapita
 #total_impact_percapita_scenar2A_case5 <-  total_impact_percapita_scenar2 : OK
 #total_impact_percapita_scenar2A_case6 <-  total_impact_percapita_scenar2 : OK
 #total_impact_percapita_scenar2A_case7 <-  total_impact_percapita_scenar2 : OK
-
+#total_impact_percapita_scenar2A_degrowth <- total_impact_percapita_scenar2 : OK
 
 
 
 
 #Scenario 2B results
-#total_impact_percapita_scenar2B_ref <- total_impact_percapita_scenar2
+#total_impact_percapita_scenar2B_ref <- total_impact_percapita_scenar2 : OK
 #total_impact_percapita_scenar2B_case2 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2B_case3 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2B_case4 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2B_case5 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2B_case6 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2B_case7 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2B_degrowth <- total_impact_percapita_scenar2 : OK 
+
 
 #Scenario 2C results
-#total_impact_percapita_scenar2C_ref <- total_impact_percapita_scenar2
+#total_impact_percapita_scenar2C_ref <- total_impact_percapita_scenar2 : OK
 #total_impact_percapita_scenar2C_case2 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2C_case3 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2C_case4 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2C_case5 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2C_case6 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2C_case7 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2C_degrowth <- total_impact_percapita_scenar2 
+
+
 
 #Scenario 2D results
 #total_impact_percapita_scenar2D_ref <- total_impact_percapita_scenar2
@@ -644,65 +650,168 @@ variation_impactpercapita
 #total_impact_percapita_scenar2D_case7 <-  total_impact_percapita_scenar2
 
 #Scenario 2E results
-#total_impact_percapita_scenar2E_ref <- total_impact_percapita_scenar2
+#total_impact_percapita_scenar2E_ref <- total_impact_percapita_scenar2 : OK
 #total_impact_percapita_scenar2E_case2 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2E_case3 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2E_case4 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2E_case5 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2E_case6 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2E_case7 <-  total_impact_percapita_scenar2
+#total_impact_percapita_scenar2E_degrowth <- total_impact_percapita_scenar2 
 
 
 
-#Let's start by plotting per capita impacts in all cases in which population is uniformly distributed (Scenario 1).
 
-categories2 <- c("Case 1", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6", "Case 7")
-numbers2 <- c(total_impact_percapita_unif_ref, total_impact_percapita_unif_case2, total_impact_percapita_unif_case3, total_impact_percapita_unif_case4, total_impact_percapita_unif_case5, total_impact_percapita_unif_case6, total_impact_percapita_unif_case7)  
+#Let's start with case comparison in scenario 1.
+
+# Store per capita impacts and case categories in lists or vectors
+categories <- c("Ref", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6","Degrowth")
+per_capita_impacts <- c(
+  total_impact_percapita_unif_ref,
+  total_impact_percapita_unif_case2,
+  total_impact_percapita_unif_case3,
+  total_impact_percapita_unif_case4,
+  total_impact_percapita_unif_case5,
+  total_impact_percapita_unif_case6,
+  total_impact_percapita_unif_degrowth
+)
 
 # Create a data frame
-data2 <- data.frame(Category = categories2, Numbers = numbers2)
+data <- data.frame(Category = factor(categories, levels = c("Ref", "Degrowth", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6")), Numbers = per_capita_impacts)
 
-# Create a three-color gradient palette (from green to dark brown)
-custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(numbers2))
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
 
-# Create a bar plot with the adjusted gradient fill
-plot_pcimpact_unif <- ggplot(data2, aes(x = Category, y = Numbers, fill = Numbers)) +
+# Create the bar plot using ggplot2
+plot_pcimpact_unif <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
   geom_bar(stat = "identity") +
-  labs(title = "Per capita impacts in the different cases, Uniform distribution",
-       x = "Categories",
-       y = "Numbers") +
+  labs(
+    title = "Per capita impacts in the different cases, Uniform distribution",
+    x = "Cases",
+    y = "Impacts"
+  ) +
   theme_minimal() +
-  scale_fill_gradientn(colors = custom_gradient_colors, guide = "legend")
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  )
 
+# Display the plot
 print(plot_pcimpact_unif)
 
 
 
 #We then do the same in scenario 2A.
 
-categories2 <- c("Case 1", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6", "Case 7")
-numbers2 <- c(total_impact_percapita_scenar2A_ref, total_impact_percapita_scenar2A_case2, total_impact_percapita_scenar2A_case3, total_impact_percapita_scenar2A_case4, total_impact_percapita_scenar2A_case5, total_impact_percapita_scenar2A_case6, total_impact_percapita_scenar2A_case7)  
+# Store per capita impacts and case categories in lists or vectors
+categories <- c("Ref", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6","Degrowth")
+per_capita_impacts <- c(
+  total_impact_percapita_scenar2A_ref,
+  total_impact_percapita_scenar2A_case2,
+  total_impact_percapita_scenar2A_case3,
+  total_impact_percapita_scenar2A_case4,
+  total_impact_percapita_scenar2A_case5,
+  total_impact_percapita_scenar2A_case6,
+  total_impact_percapita_scenar2A_degrowth
+)
 
 # Create a data frame
-data2 <- data.frame(Category = categories2, Numbers = numbers2)
+data <- data.frame(Category = factor(categories, levels = c("Ref", "Degrowth", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6")), Numbers = per_capita_impacts)
 
-# Create a three-color gradient palette (from green to dark brown)
-custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(numbers2))
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
 
-# Create a bar plot with the adjusted gradient fill
-plot_pcimpact_sce2 <- ggplot(data2, aes(x = Category, y = Numbers, fill = Numbers)) +
+# Create the bar plot using ggplot2
+plot_pcimpact_scen2 <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
   geom_bar(stat = "identity") +
-  labs(title = "Per capita impacts in the different cases, Scenario 2A",
-       x = "Categories",
-       y = "Numbers") +
+  labs(
+    title = "Per capita impacts in the different cases, Scenario 2A",
+    x = "Cases",
+    y = "Impacts"
+  ) +
   theme_minimal() +
-  scale_fill_gradientn(colors = custom_gradient_colors, guide = "legend")
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  )
 
-print(plot_pcimpact_sce2)
+# Display the plot
+print(plot_pcimpact_scen2)
+
+
+#Let's now plot the per capita impacts in the ref case according to the scenario
+
+# Store per capita impacts and scenario categories in lists or vectors
+categories <- c("Unif (Sce. 1)", "Sce. 2A", "Sce. 2B", "Sce. 2C", "Sce. 2D", "Sce. 2E")
+per_capita_impacts <- c(
+  total_impact_percapita_unif_ref,
+  total_impact_percapita_scenar2A_ref,
+  total_impact_percapita_scenar2B_ref,
+  total_impact_percapita_scenar2C_ref,
+  total_impact_percapita_scenar2D_ref,
+  total_impact_percapita_scenar2E_ref
+)
+
+# Create a data frame
+data <- data.frame(Category = factor(categories, levels = c("Unif (Sce. 1)", "Sce. 2A", "Sce. 2B", "Sce. 2C", "Sce. 2D", "Sce. 2E")), Numbers = per_capita_impacts)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Create the bar plot using ggplot2
+plot_pcimpact_ref <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Per capita impacts in the different population scenarios, Ref. case",
+    x = "Population distribution scenarios",
+    y = "Impacts"
+  ) +
+  theme_minimal() +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  )
+
+# Display the plot
+print(plot_pcimpact_ref)
 
 
 
+#We now plot the different degrowth scenarios (depending on evolution of preferences)
 
+# Store per capita impacts and scenario categories in lists or vectors
+categories <- c("Ref-Center", "Degrowth-Center", "Degrowth-Left", "Degrowth-Right", "Degrowth-Top")
+per_capita_impacts <- c(
+  total_impact_percapita_scenar2A_ref,
+  total_impact_percapita_scenar2A_degrowth,
+  total_impact_percapita_scenar2B_degrowth,
+  total_impact_percapita_scenar2C_degrowth,
+  total_impact_percapita_scenar2E_degrowth
+)
 
+# Create a data frame
+data <- data.frame(Category = factor(categories, levels = c("Ref-Center", "Degrowth-Center", "Degrowth-Left", "Degrowth-Right", "Degrowth-Top")), Numbers = per_capita_impacts)
 
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
 
+# Create the bar plot using ggplot2
+plot_pcimpact_degrowth <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Per capita impacts in different degrowth scenarios relative to baseline",
+    x = "Scenarios (case-type of population distribution concentration)",
+    y = "Per capita impacts"
+  ) +
+  theme_minimal() +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  )
+
+# Display the plot
+print(plot_pcimpact_degrowth)
