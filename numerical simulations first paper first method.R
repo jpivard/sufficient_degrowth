@@ -43,7 +43,7 @@ betas <- seq(from = 0,to = 1,by=step) #only for graphs
 ######### SCENARIO CHOICE - Assign values to shape parameters according to the scenario ############
 
 #Basic scenario 2 (2A): two beta laws with the two same shape parameters (bell curves) to model the concentration in the middle of the distribution
-#a=b=c=d=2
+a=b=c=d=2
 
 #Variant (2b): the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
 #a=b=2
@@ -65,8 +65,8 @@ betas <- seq(from = 0,to = 1,by=step) #only for graphs
 #d=5
 
 #Scenario 2E: social image matters more ("Red Queen Economy", Keep Up With the Joneses...)
-a=b=d=1
-c=5
+#a=b=d=1
+#c=5
 
 ######## POPULATION DISTRIBUTIONS (Part 1) ##############
 
@@ -192,13 +192,15 @@ programme<- function() {
 p_go = 3
 p_gd = 2
 p_bo = 1.99
-p_bd = 1  #this price is fixed
-R = 16
+p_bd = 1 
+R = 20
 d_prime = 0.01
 gamma_bo = 4
 gamma_bd = 2
 gamma_go = 1.6
 gamma_gd = 0.8
+
+
 
 
 
@@ -233,20 +235,19 @@ calculate_preferences <- function(alpha, beta, p_go, p_gd, p_bo, p_bd, R, d_prim
                                   gamma_go, gamma_gd, gamma_bo, gamma_bd) {
   bool_f1 <- calculate_boolean((1 - (p_go / p_gd) * alpha) * beta > (((p_go / p_gd) - 1) * (p_go / R) + d_prime * alpha * (gamma_go - gamma_gd * (p_go / p_gd))))
   bool_f2 <- calculate_boolean((1 - (p_go / p_bo) * (1 - alpha)) * beta > (((p_go / p_bo) - 1) * (p_go / R) + d_prime * alpha * (gamma_go - gamma_bo * (p_go / p_bo))))
-  bool_f3 <- calculate_boolean(beta > ((p_go - 1) * (p_go / R) + d_prime * alpha * (gamma_go - gamma_bd * p_go)))
+  bool_f3 <- calculate_boolean(beta > ((p_go/p_bd - 1) * (p_go / R) + d_prime * alpha * (gamma_go - gamma_bd * p_go/p_bd)))
   
   bool_g1 <- calculate_boolean((alpha - (p_gd / p_go)) * beta > (((p_gd / p_go) - 1) * (p_gd / R) + d_prime * alpha * (gamma_gd - gamma_go * (p_gd / p_go))))
   bool_g2 <- calculate_boolean((alpha - (p_gd / p_bo) * (1 - alpha)) * beta > (((p_gd / p_bo) - 1) * (p_gd / R) + d_prime * alpha * (gamma_gd - gamma_bo * (p_gd / p_bo))))
-  bool_g3 <- calculate_boolean(alpha * beta > ((p_gd - 1) * (p_gd / R) + d_prime * alpha * (gamma_gd - gamma_bd * p_gd)))
+  bool_g3 <- calculate_boolean(alpha * beta > ((p_gd/p_bd - 1) * (p_gd / R) + d_prime * alpha * (gamma_gd - gamma_bd * p_gd/p_bd)))
   
   bool_h1 <- calculate_boolean((1 - alpha - (p_bo / p_go)) * beta > (((p_bo / p_go) - 1) * (p_bo / R) + d_prime * alpha * (gamma_bo - gamma_go * (p_bo / p_go))))
   bool_h2 <- calculate_boolean((1 - alpha * (p_bo / p_gd)) * beta > (((p_bo / p_gd) - 1) * (p_bo / R) + d_prime * alpha * (gamma_bo - gamma_gd * (p_gd / p_bo))))
-  bool_h3 <- calculate_boolean((1 - alpha) * beta > ((p_bo - 1) * (p_bo / R) + d_prime * alpha * (gamma_bo - gamma_bd * p_bo)))
+  bool_h3 <- calculate_boolean((1 - alpha) * beta > ((p_bo/p_bd - 1) * (p_bo / R) + d_prime * alpha * (gamma_bo - gamma_bd * p_bo/p_bd)))
   
-  bool_i1 <- calculate_boolean(beta < ((p_go - 1) * (1 / R) + d_prime * alpha * (gamma_go - gamma_bd * p_go)))
-  bool_i2 <- calculate_boolean(beta < ((p_gd - 1) * (1 / R) + d_prime * alpha * (gamma_gd - gamma_bd * p_gd)))
-  bool_i3 <- calculate_boolean((1 - alpha) * beta < ((p_bo - 1) * (1 / R) + d_prime * alpha * (gamma_bo - gamma_bd * p_bo)))
-  
+  bool_i1 <- calculate_boolean((p_bd/p_go)*beta < ((1- p_bd/p_go) * (p_bd / R) - d_prime * alpha * (gamma_bd - gamma_go * p_bd/p_go)))
+  bool_i2 <- calculate_boolean(alpha*(p_bd/p_gd)*beta < ((1- p_bd/p_gd) * (p_bd / R) - d_prime * alpha * (gamma_bd - gamma_gd * p_bd/p_bd)))
+  bool_i3 <- calculate_boolean((1-alpha)*(p_bd/p_bo)*beta < ((1- p_bd/p_bo) * (p_bd / R) - d_prime * alpha * (gamma_bd - gamma_bo * p_bd/p_bo)))
   return(c(bool_f1, bool_f2, bool_f3, bool_g1, bool_g2, bool_g3, bool_h1, bool_h2, bool_h3, bool_i1, bool_i2, bool_i3))
 }
 
@@ -390,7 +391,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen", "blue")
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Distribution of consumers - 20% drop in income, Scenario 1",
+  labs(title = "Distribution of consumers - Environmental tax, Scenario 1",
        x = "Categories",
        y = "Percentage") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -452,7 +453,7 @@ print(plot2)
 indiv_quantity_go = R/p_go
 indiv_quantity_gd = R/p_gd
 indiv_quantity_bo = R/p_bo
-indiv_quantity_bd = R
+indiv_quantity_bd = R/p_bd
 
 
 ### Multiplying the population matrix coefficients by these quantities yields total quantities for each good : 
@@ -529,7 +530,7 @@ bar_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 
 ylim_values <- c(0, 50000)
 
-barplot(data_impacts$values, names.arg = data_impacts$category,  col = bar_colors, main = "Env. impacts by good type - Reference case, Sce. 1", ylab = "Impacts", border = "black",ylim = ylim_values)
+barplot(data_impacts$values, names.arg = data_impacts$category,  col = bar_colors, main = "Env. impacts by good type - Environmental tax, Sce. 1", ylab = "Impacts", border = "black",ylim = ylim_values)
 
 
 
@@ -595,24 +596,25 @@ variation_impactpercapita
 #1. Per capita impacts
 
 #Scenario 1 results : store in the suited variable according to case tested.
-#total_impact_percapita_unif_ref <- total_impact_percapita : OK
-#total_impact_percapita_unif_case2 <-  total_impact_percapita : OK
-#total_impact_percapita_unif_case3 <-  total_impact_percapita : OK
-#total_impact_percapita_unif_case4 <-  total_impact_percapita : OK
-#total_impact_percapita_unif_case5 <-  total_impact_percapita : OK
-#total_impact_percapita_unif_case6 <-  total_impact_percapita : OK
-#total_impact_percapita_unif_case7 <-  total_impact_percapita : OK
-#total_impact_percapita_unif_degrowth <- total_impact_percapita : OK
+#total_impact_percapita_unif_ref <- total_impact_percapita 
+#total_impact_percapita_unif_case2 <-  total_impact_percapita 
+#total_impact_percapita_unif_case3 <-  total_impact_percapita 
+#total_impact_percapita_unif_case4 <-  total_impact_percapita 
+#total_impact_percapita_unif_case5 <-  total_impact_percapita 
+#total_impact_percapita_unif_case6 <-  total_impact_percapita 
+#total_impact_percapita_unif_case7 <-  total_impact_percapita 
+#total_impact_percapita_unif_degrowth <- total_impact_percapita 
+#total_impact_percapita_unif_tax <- total_impact_percapita
 
 #Scenario 2A results
-#total_impact_percapita_scenar2A_ref <- total_impact_percapita_scenar2 : OK
-#total_impact_percapita_scenar2A_case2 <-  total_impact_percapita_scenar2 : OK
-#total_impact_percapita_scenar2A_case3 <-  total_impact_percapita_scenar2 : OK
-#total_impact_percapita_scenar2A_case4 <-  total_impact_percapita_scenar2 : OK
-#total_impact_percapita_scenar2A_case5 <-  total_impact_percapita_scenar2 : OK
-#total_impact_percapita_scenar2A_case6 <-  total_impact_percapita_scenar2 : OK
-#total_impact_percapita_scenar2A_case7 <-  total_impact_percapita_scenar2 : OK
-#total_impact_percapita_scenar2A_degrowth <- total_impact_percapita_scenar2 : OK
+#total_impact_percapita_scenar2A_ref <- total_impact_percapita_scenar2 
+#total_impact_percapita_scenar2A_case2 <-  total_impact_percapita_scenar2 
+#total_impact_percapita_scenar2A_case3 <-  total_impact_percapita_scenar2 
+#total_impact_percapita_scenar2A_case4 <-  total_impact_percapita_scenar2 
+#total_impact_percapita_scenar2A_case5 <-  total_impact_percapita_scenar2 
+#total_impact_percapita_scenar2A_case6 <-  total_impact_percapita_scenar2 
+#total_impact_percapita_scenar2A_case7 <-  total_impact_percapita_scenar2 
+#total_impact_percapita_scenar2A_degrowth <- total_impact_percapita_scenar2 
 
 
 
@@ -665,7 +667,7 @@ variation_impactpercapita
 #Let's start with case comparison in scenario 1.
 
 # Store per capita impacts and case categories in lists or vectors
-categories <- c("Ref", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6","Degrowth")
+categories <- c("Ref", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6","Degrowth","Tax")
 per_capita_impacts <- c(
   total_impact_percapita_unif_ref,
   total_impact_percapita_unif_case2,
@@ -673,11 +675,13 @@ per_capita_impacts <- c(
   total_impact_percapita_unif_case4,
   total_impact_percapita_unif_case5,
   total_impact_percapita_unif_case6,
-  total_impact_percapita_unif_degrowth
+  total_impact_percapita_unif_degrowth,
+  total_impact_percapita_unif_tax
+  
 )
 
 # Create a data frame
-data <- data.frame(Category = factor(categories, levels = c("Ref", "Degrowth", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6")), Numbers = per_capita_impacts)
+data <- data.frame(Category = factor(categories, levels = c("Ref", "Tax", "Degrowth", "Case 2", "Case 3", "Case 4", "Case 5", "Case 6")), Numbers = per_capita_impacts)
 
 # Set custom colors for the gradient fill
 custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
@@ -815,3 +819,6 @@ plot_pcimpact_degrowth <- ggplot(data, aes(x = Category, y = Numbers, fill = Num
 
 # Display the plot
 print(plot_pcimpact_degrowth)
+
+
+
