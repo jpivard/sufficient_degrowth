@@ -45,7 +45,7 @@ betas <- seq(from = 0,to = 1,by=step) #only for graphs
 #Basic scenario 2 (2A): two beta laws with the two same shape parameters (bell curves) to model the concentration in the middle of the distribution
 a=b=c=d=2
 
-#Variant (2b): the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
+#Variant (2b) - Only concentrated for environmental sensitivity while uniform for status: the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
 #a=b=2
 #c=d=1
 
@@ -67,6 +67,7 @@ a=b=c=d=2
 #Scenario 2E: social image matters more ("Red Queen Economy", Keep Up With the Joneses...)
 #a=b=d=1
 #c=5
+
 
 ######## POPULATION DISTRIBUTIONS (Part 1) ##############
 
@@ -189,10 +190,10 @@ programme<- function() {
 
 #We define our "borders", delimiting the consumption zones according to the exogenous model parameters (so that we can study the different cases by changing only the following values).
 #we initialize the parameters of our "borders", i.e. the prices of the four goods, individual income and marginal damage as well as impact parameters (satisfying model assumptions)
-p_go = 3
-p_gd = 2
-p_bo = 1.99
-p_bd = 1 
+p_go = 3.08
+p_gd = 2.04
+p_bo = 2.2
+p_bd = 1.1 
 R = 20
 d_prime = 0.01
 gamma_bo = 4
@@ -436,7 +437,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen", "blue")
 # Create a bar plot (caption to be changed according to the case/scenario tested)
 plot2 <- ggplot(data2, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Distribution of consumers - 20% drop in income, Scenario 2E",
+  labs(title = "Distribution of consumers - Environmental tax, Scenario 2E",
        x = "Categories",
        y = "Percentage") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -530,7 +531,7 @@ bar_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 
 ylim_values <- c(0, 50000)
 
-barplot(data_impacts$values, names.arg = data_impacts$category,  col = bar_colors, main = "Env. impacts by good type - Environmental tax, Sce. 1", ylab = "Impacts", border = "black",ylim = ylim_values)
+barplot(data_impacts$values, names.arg = data_impacts$category,  col = bar_colors, main = "Env. impacts by good type - Case 4, Sce. 1", ylab = "Impacts", border = "black",ylim = ylim_values)
 
 
 
@@ -615,23 +616,23 @@ variation_impactpercapita
 #total_impact_percapita_scenar2A_case6 <-  total_impact_percapita_scenar2 
 #total_impact_percapita_scenar2A_case7 <-  total_impact_percapita_scenar2 
 #total_impact_percapita_scenar2A_degrowth <- total_impact_percapita_scenar2 
-
+#total_impact_percapita_scenar2A_tax <- total_impact_percapita_scenar2 
 
 
 
 #Scenario 2B results
-#total_impact_percapita_scenar2B_ref <- total_impact_percapita_scenar2 : OK
+#total_impact_percapita_scenar2B_ref <- total_impact_percapita_scenar2 
 #total_impact_percapita_scenar2B_case2 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2B_case3 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2B_case4 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2B_case5 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2B_case6 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2B_case7 <-  total_impact_percapita_scenar2
-#total_impact_percapita_scenar2B_degrowth <- total_impact_percapita_scenar2 : OK 
-
+#total_impact_percapita_scenar2B_degrowth <- total_impact_percapita_scenar2  
+#total_impact_percapita_scenar2B_tax <- total_impact_percapita_scenar2
 
 #Scenario 2C results
-#total_impact_percapita_scenar2C_ref <- total_impact_percapita_scenar2 : OK
+#total_impact_percapita_scenar2C_ref <- total_impact_percapita_scenar2 
 #total_impact_percapita_scenar2C_case2 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2C_case3 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2C_case4 <-  total_impact_percapita_scenar2
@@ -639,7 +640,7 @@ variation_impactpercapita
 #total_impact_percapita_scenar2C_case6 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2C_case7 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2C_degrowth <- total_impact_percapita_scenar2 
-
+#total_impact_percapita_scenar2C_tax <- total_impact_percapita_scenar2
 
 
 #Scenario 2D results
@@ -652,7 +653,7 @@ variation_impactpercapita
 #total_impact_percapita_scenar2D_case7 <-  total_impact_percapita_scenar2
 
 #Scenario 2E results
-#total_impact_percapita_scenar2E_ref <- total_impact_percapita_scenar2 : OK
+#total_impact_percapita_scenar2E_ref <- total_impact_percapita_scenar2 
 #total_impact_percapita_scenar2E_case2 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2E_case3 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2E_case4 <-  total_impact_percapita_scenar2
@@ -660,7 +661,7 @@ variation_impactpercapita
 #total_impact_percapita_scenar2E_case6 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2E_case7 <-  total_impact_percapita_scenar2
 #total_impact_percapita_scenar2E_degrowth <- total_impact_percapita_scenar2 
-
+#total_impact_percapita_scenar2E_tax <- total_impact_percapita_scenar2
 
 
 
@@ -821,4 +822,44 @@ plot_pcimpact_degrowth <- ggplot(data, aes(x = Category, y = Numbers, fill = Num
 print(plot_pcimpact_degrowth)
 
 
+
+
+#We now plot the different tax scenarios (depending on evolution of preferences)
+
+# Store per capita impacts and scenario categories in lists or vectors
+categories <- c("Ref-Center", "Tax-Center", "Ref-Left", "Tax-Left", "Ref-Right", "Tax-Right", "Ref-Top", "Tax-Top")
+per_capita_impacts <- c(
+  total_impact_percapita_scenar2A_ref,
+  total_impact_percapita_scenar2A_tax,
+  total_impact_percapita_scenar2B_ref,
+  total_impact_percapita_scenar2B_tax,
+  total_impact_percapita_scenar2C_ref,
+  total_impact_percapita_scenar2C_tax,
+  total_impact_percapita_scenar2E_ref,
+  total_impact_percapita_scenar2E_tax
+)
+
+# Create a data frame
+data <- data.frame(Category = factor(categories, levels =  c("Ref-Center", "Tax-Center", "Ref-Left", "Tax-Left", "Ref-Right", "Tax-Right", "Ref-Top", "Tax-Top")), Numbers = per_capita_impacts)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Create the bar plot using ggplot2
+plot_pcimpact_tax <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Effect of taxes on impacts relative to baseline in different scenarios",
+    x = "Scenarios (case-type of population distribution concentration)",
+    y = "Per capita impacts"
+  ) +
+  theme_minimal() +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  )
+
+# Display the plot
+print(plot_pcimpact_tax)
 
