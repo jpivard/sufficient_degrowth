@@ -20,12 +20,13 @@ library("reshape")
 library("ggplot2")
 library(tibble)
 library("plotly")     
+library(RColorBrewer)
 
 
 
 
 
-######We first calibrate the parameters 
+###### We first calibrate the parameters #####
 
 R = 20
 p_go = 3
@@ -45,12 +46,12 @@ theta = 1000  #How to calibrate that?
 
   
 ##### The size of the matrices (i.e. the accuracy of the computation) must also be chosen here.
-step = 0.1
+step = 0.05
 size = 1/step + 1
 
 
 
-#Let us define an optimization function that loops over all possible baskets for each pair of parameters and chooses for each the one maximizing utility.
+### Let us define an optimization function that loops over all possible baskets for each pair of parameters and chooses for each the one maximizing utility.
 
 opti_function <- function(alpha, beta, R, p, gamma, d_prime, theta) {
   X1 <- seq(0, R/p[1], by = step)
@@ -58,7 +59,7 @@ opti_function <- function(alpha, beta, R, p, gamma, d_prime, theta) {
   X3 <- seq(0, R/p[3], by = step)
   X4 <- seq(0, R/p[4], by = step)
   
-  Umax <- -10000
+  Umax <- -1000  #How to calibrate that?
   xs <- numeric(4)
   
   for (i in seq_along(X1)) {
@@ -122,12 +123,14 @@ rev_b <-  seq(1, 0, by = -step)
 A <- matrix(rep(a, length(b)), nrow = length(a), byrow = TRUE)
 B <- matrix(rep(rev_b, length(a)), nrow = length(b), byrow = FALSE)
 
-D <- matrix(0, nrow = nrow(A), ncol = ncol(A))
-D1 <- matrix(0, nrow = nrow(A), ncol = ncol(A))
-D2 <- matrix(0, nrow = nrow(A), ncol = ncol(A))
-D3 <- matrix(0, nrow = nrow(A), ncol = ncol(A))
-D4 <- matrix(0, nrow = nrow(A), ncol = ncol(A))
-M <- matrix(0, nrow = nrow(A), ncol = ncol(A))
+
+D <- matrix(0, nrow = size, ncol = size) 
+D1 <- matrix(0, nrow = size, ncol = size) 
+D2 <- matrix(0, nrow = size, ncol = size)
+D3 <- matrix(0, nrow = size, ncol = size)
+D4 <- matrix(0, nrow = size, ncol = size)
+M <- matrix(0, nrow = size, ncol = size)
+
 
 DD <- list()
 for (k in 1:4) {
@@ -164,13 +167,11 @@ print(D2)
 print(D3)
 print(D4)
 #Seems fine (at least for small dimensions)
-#Except maybe BD being slightly consumed in the BO exclusive zone in the reference case, why ?
-#Same issue with green goods when income is doubled...
+#Except maybe BD being slightly consumed in the BO exclusive zone, why ?
 
 
 #Computing the size of global solutions = Compute the sum of DD{1}, DD{2}, DD{3}, and DD{4} in order to get the number of goods consumed in each point
 S <- DD[[1]] + DD[[2]] + DD[[3]] + DD[[4]]
-S
 
 
 #Computing the budget shares spent in each good (in percentage)
@@ -188,33 +189,23 @@ for (i in 1:nrow(shareGO)) {
    shareBD[i,j]<- (p[4]*D4[i,j]/R)*100
   }
 }
+#OK (99% in the exclusive zones because of limited accuracy due to small dimensions being used)
 
 
-###### Graphical representations of the matrices : TO BE CONTINUED########
+
+###### Graphical representations of the matrices ########
 
 #1. Number of goods consumed 
 
-#Transformation to be applied to each matrix so that the display is correct
-
-
-
-
-
-
-
-# Define new row and column names
-new_row_names <- rev_b
-new_col_names <- a
-
 # Rename rows and columns
-rownames(S_plot) <- new_row_names
-colnames(S_plot) <- new_col_names
+rownames(S) <- rev_b
+colnames(S) <- a
 
 # Print the matrix with renamed rows and columns
-print(S_plot)
+#print(S)
 
-
-
+# Reverse the rows of the matrix to flip the y-axis direction
+S <- S[nrow(S):1, ]
 
 # Create the heatmap
 heatmap(S, scale = "none", Rowv = NA, Colv = NA,
@@ -224,54 +215,70 @@ heatmap(S, scale = "none", Rowv = NA, Colv = NA,
 legend("right", legend = c("1", "2", "3"), fill = c("red", "yellow", "blue"))
 
 
-plot_ly(z = S_plot, type = "heatmap")  
 
 
+#2. Graphical representations of how consumers spend their budget in the different lifestyles
 
 
-#3D representations of the zones where good k is consumed 
-for (k in 1:4) {
-  # Open a new 3D plot window
-  open3d()
-  # Create a 3D surface plot
-  persp3d(A, B, DD[[k]], col = "lightblue", xlab = "alpha", ylab = "beta", zlab = "DD", main = paste("Domain of global solutions with good", k, ""))
+generate_heatmap <- function(share, lifestyle, color_palette, legend_title) {
+  # Set the row and column names
+  rownames(share) <- rev_b  
+  colnames(share) <- a
+  
+  # Determine the number of colors and percentage cutoffs
+  num_colors <- 10  # Adjust as needed
+  cutoffs <- c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90)  # Adjust as needed
+  
+  # Specify the desired size for the main title
+  cex_main <- 0.8  # Adjust this value as needed
+  
+  # Set the global graphical parameter for main title size
+  par(cex.main = cex_main)
+  
+  # Reverse the rows of the matrix to flip the y-axis direction
+  share_reversed <- share[nrow(share):1, ]
+  
+  # Plot the heatmap with the reversed matrix
+  heatmap(share_reversed, scale = "none", Rowv = NA, Colv = NA,
+          col = color_palette,
+          main = paste("Share of total income spent in", lifestyle, "lifestyle (in percentage) - Reference case"),
+          cexRow = 0.7, cexCol = 0.7,
+          ylab = "beta")  # Add labels for x and y axes
+  
+  # Rotate the x-axis label horizontally
+  mtext("alpha", side = 1, line = 2, las = 1)
+  
+  # Create breaks for color mapping
+  breaks <- seq(0, 100, length.out = num_colors)
+  
+  # Create a named vector associating each unique value in the matrix with a color
+  color_map <- cut(share_reversed, breaks = breaks, include.lowest = TRUE,
+                   labels = color_palette[-length(color_palette)])
+  
+  # Adjust plot margins using par() function
+  # Adjust the right margin to allocate more space for the legend
+  par(mar = c(4, 4, 4, 6))  # Increased right margin for better label alignment
+  
+  # Create the legend with inset parameter specifying the distance from the margins
+  legend("right", inset = c(1, 0), legend = as.character(cutoffs), fill = color_palette,
+         title = legend_title,  # Add a title to the legend
+         cex = 0.7, pt.cex = 1.5,  # Adjust cex and pt.cex as needed
+         y.intersp = 1.5, xpd = TRUE)  # Adjust spacing between legend items as needed
 }
-#Zones are correct, but graphs should be improved.
+
+# Define color palettes for different lifestyles
+color_palette_GO <- c(colorRampPalette(c("white", "darkgreen"))(num_colors - 1), "darkgreen")
+color_palette_GD <- c(colorRampPalette(c("white", "darkgreen"))(num_colors - 1), "darkgreen")
+color_palette_BO <- c(colorRampPalette(c("white", "brown"))(num_colors - 1), "brown")
+color_palette_BD <- c(colorRampPalette(c("white", "brown"))(num_colors - 1), "brown")
+
+# Generate heatmap plots for different lifestyles
+generate_heatmap(shareGO, "GO", color_palette_GO, "Shares")
+generate_heatmap(shareGD, "GD", color_palette_GD, "Shares")
+generate_heatmap(shareBO, "BO", color_palette_BO, "Shares")
+generate_heatmap(shareBD, "BD", color_palette_BD, "Shares")
 
 
-
-#Legend : all possible baskets appearing in the figures
-Z <- list(c(1, 2, 3, 4), c(1, 2, 3), c(1, 2, 4), c(1, 3, 4), c(2, 3, 4), c(1, 2), c(1, 3), c(1, 4), c(2, 3), c(2, 4), c(3, 4), 1, 2, 3, 4)
-num <- numeric(length(Z))
-for (k in seq_along(Z)) {
-  if (is.list(Z[[k]])) {
-    num[k] <- sum(2^(Z[[k]] - 1))
-    cat(num[k], " ", Z[[k]], "\n")
-  } else {
-    num[k] <- 2^(Z[[k]] - 1)
-    cat(num[k], " ", Z[[k]], "\n")
-  }
-}
-
-
-#Plotting the different baskets
-
-# Create a title string using sprintf
-str <- sprintf("global solutions")
-
-# Set the plot title and the labels
-title(str)
-xlab <- "alpha"
-ylab <- "beta"
-
-# Open a new plot window
-plot.new()
-
-# Create an image plot
-image(a, b, D, col = heat.colors(100), xlab = xlab, ylab = ylab)
-
-# Reverse the y-axis direction
-axis(2, at = seq_along(b), labels = b)
 
 
 
