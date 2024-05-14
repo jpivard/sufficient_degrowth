@@ -42,11 +42,10 @@ gammaBD <- 2
 gammaBO <- 4
 gamma <- c(gammaGO, gammaGD, gammaBO, gammaBD)
 
-theta = 1000  #How to calibrate that?
-
+theta = 1000  
   
 ##### The size of the matrices (i.e. the accuracy of the computation) must also be chosen here.
-step = 0.05
+step = 0.01
 size = 1/step + 1
 
 
@@ -59,7 +58,7 @@ opti_function <- function(alpha, beta, R, p, gamma, d_prime, theta) {
   X3 <- seq(0, R/p[3], by = step)
   X4 <- seq(0, R/p[4], by = step)
   
-  Umax <- -1000  #How to calibrate that?
+  Umax <- -1000  
   xs <- numeric(4)
   
   for (i in seq_along(X1)) {
@@ -116,12 +115,12 @@ opti_function(1/2,1/4,R,p,gamma,d_prime,theta)
 
 #Let us now loop over preference parameters and represent optimal consumption baskets for each couple of coordinates
 
-a <- seq(0, 1, by = step)
-b <- seq(0, 1, by = step)
-rev_a <-  seq(1, 0, by = -step)
-rev_b <-  seq(1, 0, by = -step)
-A <- matrix(rep(a, length(b)), nrow = length(a), byrow = TRUE)
-B <- matrix(rep(rev_b, length(a)), nrow = length(b), byrow = FALSE)
+alphas <- seq(0, 1, by = step)
+betas <- seq(0, 1, by = step)
+rev_alphas <-  seq(1, 0, by = -step)
+rev_betas <-  seq(1, 0, by = -step)
+A <- matrix(rep(alphas, length(b)), nrow = length(a), byrow = TRUE)
+B <- matrix(rep(rev_betas, length(a)), nrow = length(b), byrow = FALSE)
 
 
 D <- matrix(0, nrow = size, ncol = size) 
@@ -166,8 +165,6 @@ print(D1)
 print(D2)
 print(D3)
 print(D4)
-#Seems fine (at least for small dimensions)
-#Except maybe BD being slightly consumed in the BO exclusive zone, why ?
 
 
 #Computing the size of global solutions = Compute the sum of DD{1}, DD{2}, DD{3}, and DD{4} in order to get the number of goods consumed in each point
@@ -189,17 +186,17 @@ for (i in 1:nrow(shareGO)) {
    shareBD[i,j]<- (p[4]*D4[i,j]/R)*100
   }
 }
-#OK (99% in the exclusive zones because of limited accuracy due to small dimensions being used)
+#OK (99% in the ostentatious exclusive zones because of limited accuracy due to small dimensions being used)
 
 
 
-###### Graphical representations of the matrices ########
+###### Graphical representations of the quantity matrices ########
 
 #1. Number of goods consumed 
 
 # Rename rows and columns
-rownames(S) <- rev_b
-colnames(S) <- a
+rownames(S) <- rev_betas
+colnames(S) <- alphas
 
 # Print the matrix with renamed rows and columns
 #print(S)
@@ -210,7 +207,7 @@ S <- S[nrow(S):1, ]
 # Create the heatmap
 heatmap(S, scale = "none", Rowv = NA, Colv = NA,
         col = c("red", "yellow", "blue"), 
-        main = "Number of goods consumed - Reference case",
+        main = "Number of goods consumed - Income doubled",
         cexRow = 0.7, cexCol = 0.7)
 legend("right", legend = c("1", "2", "3"), fill = c("red", "yellow", "blue"))
 
@@ -219,11 +216,10 @@ legend("right", legend = c("1", "2", "3"), fill = c("red", "yellow", "blue"))
 
 #2. Graphical representations of how consumers spend their budget in the different lifestyles
 
-
 generate_heatmap <- function(share, lifestyle, color_palette, legend_title) {
   # Set the row and column names
-  rownames(share) <- rev_b  
-  colnames(share) <- a
+  rownames(S) <- rev_betas
+  colnames(S) <- alphas
   
   # Determine the number of colors and percentage cutoffs
   num_colors <- 10  # Adjust as needed
@@ -241,7 +237,7 @@ generate_heatmap <- function(share, lifestyle, color_palette, legend_title) {
   # Plot the heatmap with the reversed matrix
   heatmap(share_reversed, scale = "none", Rowv = NA, Colv = NA,
           col = color_palette,
-          main = paste("Share of total income spent in", lifestyle, "lifestyle (in percentage) - Reference case"),
+          main = paste("Share of total income spent in", lifestyle, "lifestyle (in percentage) - Income doubled"),
           cexRow = 0.7, cexCol = 0.7,
           ylab = "beta")  # Add labels for x and y axes
   
@@ -279,6 +275,186 @@ generate_heatmap(shareBO, "BO", color_palette_BO, "Shares")
 generate_heatmap(shareBD, "BD", color_palette_BD, "Shares")
 
 
+#3. Compute and plot 'market shares' of the different goods
+
+#Start by computing total quantities consumed of each good
+
+quantity_GO = sum(D1)
+quantity_GD = sum(D2)
+quantity_BO = sum(D3)
+quantity_BD = sum(D4)
+total_quantity = sum(D1+D2+D3+D4)
+
+#Then infer the 'market share' of each composite good
+
+marketshare_GO = (quantity_GO/total_quantity)*100
+marketshare_GD = (quantity_GD/total_quantity)*100
+marketshare_BO = (quantity_BO/total_quantity)*100
+marketshare_BD = (quantity_BD/total_quantity)*100
+
+#And plot those market shares in an histogram
+
+consumer_types <- c("Good GO", "Good GD", "Good BO", "Good BD")
+percentages <- c(marketshare_GO, marketshare_GD, marketshare_BO, marketshare_BD)
+
+# Create a data frame
+data <- data.frame(Category = consumer_types, Percentage = percentages)
+
+# Set colors
+custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen") 
+
+# Create a bar plot (caption to be changed according to the case tested)
+plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Market shares - Income doubled, Uniformly distributed population",
+       x = "Lifestyles",
+       y = "Percentage of quantities consumed") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
+  theme_minimal() +
+  scale_fill_manual(values = custom_colors, guide="none")
+
+print(plot)
+
+
+#### The environmental part #####
+
+#From quantities consumed of each good, we can infer the environmental impacts induced by each good (assuming first implicitly a uniform repartition of the population)
+
+P <- matrix(0, nrow = size, ncol = size) 
+P1 <- matrix(0, nrow = size, ncol = size) 
+P2 <- matrix(0, nrow = size, ncol = size)
+P3 <- matrix(0, nrow = size, ncol = size)
+P4 <- matrix(0, nrow = size, ncol = size)
+
+#Create for each good matrices of environmental impacts per pixel
+
+for (i in 1:nrow(P1)) {
+  for (j in 1:ncol(P1)) {
+    P1[i,j]<- gammaGO*D1[i,j]
+    P2[i,j]<- gammaGD*D2[i,j]
+    P3[i,j]<- gammaBO*D3[i,j]
+    P4[i,j]<- gammaBD*D4[i,j]
+  }
+}
+
+#Compute the total impact per pixel/consumer (to be compared between cases and then plotted)
+P <- P1+P2+P3+P4
+
+
+#And the contribution of each lifestyle to total pollution
+impact_GO = sum(P1)
+impact_GD = sum(P2)
+impact_BO = sum(P3)
+impact_BD = sum(P4)
+total_impacts = impact_GO+impact_GD+impact_BO+impact_BD
+
+contrib_GO = (impact_GO/total_impacts)*100
+contrib_GD = (impact_GD/total_impacts)*100
+contrib_BO = (impact_BO/total_impacts)*100
+contrib_BD = (impact_BD/total_impacts)*100
+
+#Plot the relative contribution of each lifestyle to pollution
+
+consumer_types <- c("Good GO", "Good GD", "Good BO", "Good BD")
+percentages <- c(contrib_GO, contrib_GD, contrib_BO, contrib_BD)
+
+# Create a data frame
+data <- data.frame(Category = consumer_types, Percentage = percentages)
+
+# Set colors
+custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen") 
+
+# Create a bar plot (caption to be changed according to the case tested)
+plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Contributions to environmental impacts - Income doubled, Uniform distributed population",
+       x = "Lifestyles",
+       y = "Proportion of environmental impacts") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
+  theme_minimal() +
+  scale_fill_manual(values = custom_colors, guide="none")
+
+print(plot)
+
+
+
+
+
+#And finally per capita impacts
+totalimpacts_percapita = total_impacts/(size^2)
+
+
+#Plot per capita impacts in the different cases
+
+
+
+#Graphical representations of pollution in the uniform scenario
+
+
+#1. Pollution/Environmental impacts per consumer type 
+
+# Rename rows and columns
+rownames(S) <- rev_betas
+colnames(S) <- alphas
+
+#Get the quantiles of the matrix, on which we base the color gradient
+
+# 1. Transformer la matrice en un vecteur
+flat_P <- as.vector(P)
+
+# 2. Trier le vecteur
+sorted_flat_P <- sort(flat_P)
+
+# 3. Calculer les positions des quintiles
+n <- length(sorted_flat_P)
+P_quintiles_indices <- ceiling(n * c(0.2, 0.4, 0.6, 0.8)) #To be adjusted according to the case tested (here the first two and then the last two quantiles being the same we drop the first and last one, i.e. the min and max values)
+
+# 4. Extraire les valeurs des quintiles
+P_quintiles <- sorted_flat_P[P_quintiles_indices]
+
+
+# Determine the number of colors and percentage cutoffs
+num_colors <- 4  # Adjust as needed
+cutoffs <- P_quintiles  # Adjust as needed
+
+# Define color palette
+color_palette_impacts <- c("green","lightgreen","orange","brown")
+
+# Reverse the rows of the matrix to flip the y-axis direction
+P <- P[nrow(P):1, ]
+
+# Specify the desired size for the main title
+cex_main <- 0.8  # Adjust this value as needed
+
+# Set the global graphical parameter for main title size
+par(cex.main = cex_main)
+
+# Rotate the x-axis label horizontally
+mtext("alpha", side = 1, line = 2, las = 1)
+
+# Create breaks for color mapping
+breaks <- seq(min(P_quintiles), max(P_quintiles), length.out = num_colors)
+
+# Create a named vector associating each unique value in the matrix with a color
+color_map <- cut(P, breaks = breaks, include.lowest = TRUE,
+                 labels = color_palette_impacts[-length(color_palette_impacts)])
+
+# Create the heatmap
+heatmap(P, scale = "none", Rowv = NA, Colv = NA,
+        col = color_palette_impacts, 
+        main = "Environmental impacts (in units) - Income doubled",
+        cexRow = 0.7, cexCol = 0.7,
+        ylab = "beta")
+
+# Adjust plot margins using par() function
+# Adjust the right margin to allocate more space for the legend
+par(mar = c(4, 4, 4, 6))  # Increased right margin for better label alignment
+
+# Create the legend with inset parameter specifying the distance from the margins
+legend("right", inset = c(0.9, 0.9), legend = as.character(cutoffs), fill = color_palette_impacts,
+       title = "Min/Quantile/Max values",  # Add a title to the legend
+       cex = 0.7, pt.cex = 1.5,  # Adjust cex and pt.cex as needed
+       y.intersp = 1.5, xpd = TRUE)  # Adjust spacing between legend items as needed
 
 
 
@@ -286,6 +462,7 @@ generate_heatmap(shareBD, "BD", color_palette_BD, "Shares")
 
 
 
+#### Population scenarios (later) ####
 
 
 
