@@ -16,6 +16,11 @@ rm(list=ls())
 #install.packages("gridExtra")
 #install.packages("cowplot")
 
+#install.packages("parallel")
+#install.packages("doParallel")
+#install.packages("foreach")
+
+
 library(graphics)
 library(rgl)
 library("reshape")
@@ -26,6 +31,17 @@ library(RColorBrewer)
 library("gridExtra")
 library(cowplot)
 
+library(parallel)
+library(doParallel)
+library(foreach)
+
+
+# Detect the number of available cores
+num_cores <- detectCores() - 1  # It's a good practice to leave one core free
+
+# Set up the parallel backend to use multiple cores
+cl <- makeCluster(num_cores)
+registerDoParallel(cl)
 
 
 
@@ -118,25 +134,24 @@ opti_function(1/2,1/4,R,p,gamma,d_prime,theta)
 
 #Let us now loop over preference parameters and represent optimal consumption baskets for each couple of coordinates
 
-a <- seq(0, 1, by = step)
-b <- seq(0, 1, by = step)
-rev_a <-  seq(1, 0, by = -step)
-rev_b <-  seq(1, 0, by = -step)
-A <- matrix(rep(a, length(b)), nrow = length(a), byrow = TRUE)
-B <- matrix(rep(rev_b, length(a)), nrow = length(b), byrow = FALSE)
+alphas <- seq(0, 1, by = step)
+betas <- seq(0, 1, by = step)
+rev_alphas <- seq(1, 0, by = -step)
+rev_betas <- seq(1, 0, by = -step)
+A <- matrix(rep(alphas, length(betas)), nrow = length(alphas), byrow = TRUE)
+B <- matrix(rep(rev_betas, length(alphas)), nrow = length(betas), byrow = FALSE)
 
-
-D <- matrix(0, nrow = size, ncol = size) 
-D1 <- matrix(0, nrow = size, ncol = size) 
+size <- nrow(A)
+D <- matrix(0, nrow = size, ncol = size)
+D1 <- matrix(0, nrow = size, ncol = size)
 D2 <- matrix(0, nrow = size, ncol = size)
 D3 <- matrix(0, nrow = size, ncol = size)
 D4 <- matrix(0, nrow = size, ncol = size)
 M <- matrix(0, nrow = size, ncol = size)
 
-
 DD <- list()
 for (k in 1:4) {
-  DD[[k]] <- matrix(0, nrow = nrow(A), ncol = ncol(A))
+  DD[[k]] <- matrix(0, nrow = size, ncol = size)
 }
 
 for (i in 1:nrow(A)) {
@@ -201,8 +216,8 @@ S <- DD[[1]] + DD[[2]] + DD[[3]] + DD[[4]]
 
 
 # Rename rows and columns
-rownames(S) <- rev_b
-colnames(S) <- a
+rownames(S) <- rev_betas
+colnames(S) <- alphas
 
 
 # Reverse the rows of the matrix to flip the y-axis direction
@@ -222,8 +237,8 @@ legend("right", legend = c("1", "2", "3"), fill = c("red", "yellow", "blue"))
 
 generate_heatmap <- function(share, lifestyle, color_palette, legend_title) {
   # Set the row and column names
-  rownames(share) <- rev_b
-  colnames(share) <- a
+  rownames(share) <- rev_betas
+  colnames(share) <- alphas
   
   # Determine the number of colors and percentage cutoffs
   num_colors <- 5  # Adjust as needed
@@ -241,7 +256,7 @@ generate_heatmap <- function(share, lifestyle, color_palette, legend_title) {
   # Plot the heatmap with the reversed matrix
   heatmap(share_reversed, scale = "none", Rowv = NA, Colv = NA,
           col = color_palette,
-          main = paste("Share of total income spent in", lifestyle, "lifestyle (in percentage) - BO 10% cheaper"),
+          main = paste("Share of total income spent in", lifestyle, "lifestyle (in percentage) - Reference case"),
           cexRow = 0.7, cexCol = 0.7,
           ylab = "beta")  # Add labels for x and y axes
   
@@ -284,13 +299,6 @@ heatmap_grid <- plot_grid(heatmap_GO, heatmap_GD, heatmap_BO, heatmap_BD, ncol =
 
 # Display the grid
 print(heatmap_grid)
-
-
-
-
-
-
-
 
 
 
@@ -456,8 +464,8 @@ print(plot_pcimpact_unif)
 # Pollution/Environmental impacts per consumer type 
 
 # Rename rows and columns
-rownames(P) <- rev_b
-colnames(P) <- a
+rownames(P) <- rev_betas
+colnames(P) <- alphas
 
 # Reverse the rows of the matrix to flip the y-axis direction
 P <- P[nrow(P):1, ]
@@ -509,8 +517,135 @@ legend("right", inset = c(-0.2, 0), legend = cutoff_labels, fill = color_palette
 
 
 
-#### Population scenarios (later) ####
+#### Population scenarios  ####
 
+#Until here we have assumed the population to be uniformly distributed in the square.
+#We now use Beta distributions to model various population concentration scenarios.
+
+
+##SCENARIO CHOICE - Assign values to shape parameters according to the scenario 
+
+#Basic scenario 2 (2A): two beta laws with the two same shape parameters (bell curves) to model the concentration in the middle of the distribution
+a=b=c=d=2
+
+#Variant (2b) - Only concentrated for environmental sensitivity while uniform for status: the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
+#a=b=2
+#c=d=1
+
+#Scenario 2B: Lower/laxer environmental norm (concentration on the left, beta law with shape parameters 5 and 1 on alpha, uniform on beta).
+#a=5
+#b=c=d=1
+
+#Scenario 2C : Higher/stringent environmental norm (right-hand concentration)
+#a=c=d=1
+#b=5
+
+
+#initialize with an empty matrix
+pop <- matrix(,size,size) 
+
+#To compute discrete densities : 
+
+#We create our quantile vectors (in line)
+
+alphas_vector <- t(matrix(alphas))
+betas_vector <- t(matrix(betas))
+
+#Starting from the repartition function, we define the discrete density of a beta (one for each of the 2 dimensions).
+
+densite_beta_dim1 <- function(n, a, b, step) {
+  if (n == 0) {
+    return(pbeta(1, a, b) - pbeta(1 - step/2, a, b))
+  } 
+  if (n == 1/step) {
+    return(pbeta(step/2,a,b) - pbeta(0,a,b))
+  } 
+  else {
+    densite <- pbeta(step/2 + 1 - n * step, a, b) - pbeta(step/2 + 1 - (n + 1) * step, a, b)
+    return(densite)
+  }
+}
+
+densite_beta_dim2 <- function(n, c, d, step) {
+  if (n == 0) {
+    return(pbeta(1, c, d) - pbeta(1 - step/2, c, d))
+  } 
+  if (n == 1/step) {
+    return(pbeta(step/2,c,d) - pbeta(0,c,d))
+  } 
+  else {
+    densite <- pbeta(step/2 + 1 - n * step, c, d) - pbeta(step/2 + 1 - (n + 1) * step, c, d)
+    return(densite)
+  }
+}
+
+# Calling the functions at n = 0 and storing the result
+result_at_0_dim1 <- densite_beta_dim1(0, a, b, step)
+result_at_0_dim2 <- densite_beta_dim2(0, c, d, step)
+
+# Storing other values iteratively in a matrix 
+num_iterations <- size - 1  
+proba_values_dim1 <- matrix(0, nrow = 1, ncol = num_iterations + 1)
+proba_values_dim2 <- matrix(0, nrow = 1, ncol = num_iterations + 1)
+
+for (i in 1:num_iterations) {
+  proba_values_dim1[1, i + 1] <- densite_beta_dim1(i, a, b, step)
+  proba_values_dim2[1, i + 1] <- densite_beta_dim2(i, c, d, step)
+}
+
+proba_values_dim1[1]=result_at_0_dim1
+proba_values_dim2[1]=result_at_0_dim2
+
+sum(proba_values_dim1)
+sum(proba_values_dim2)
+#bell-shaped densities, symmetrical and sum to one 
+
+#We multiply our two probability vectors to obtain the probabilities for the entire population.
+pop= t(proba_values_dim2)%*%proba_values_dim1
+#There is indeed a higher population concentration on median values compared to the uniform case.
+
+sum(pop) 
+#just to check it sums to one, and it does !
+
+
+
+## Application of these population scenarios to compute environmental impacts
+
+
+#We first define the population of consumers of each lifestyle depending on the scenario
+
+
+# Step 1 : Define a function to create a dummy matrix corresponding to consumers (or not) of the lifestyle
+create_dummy_matrix <- function(matrix_input) {
+  # Create the dummy matrix
+  dummy_matrix <- as.numeric(matrix_input > 0)
+  # Convert the dummy_matrix to the same dimensions as the original matrix
+  dummy_matrix <- matrix(dummy_matrix, nrow = nrow(matrix_input), ncol = ncol(matrix_input))
+  # Return the dummy matrix
+  return(dummy_matrix)
+}
+
+dummy_GO <- create_dummy_matrix(D1)
+dummy_GD <- create_dummy_matrix(D2)
+dummy_BO <- create_dummy_matrix(D3)
+dummy_BD <- create_dummy_matrix(D4)
+
+#Step 2 is to compute the number of people following each lifestyle depending on the population distribution
+go_consumers = pop*dummy_GO
+gd_consumers = pop*dummy_GD
+bo_consumers = pop*dummy_BO
+bd_consumers = pop*dummy_BD
+
+
+#Before computing per capita impacts, we must rescale population matrices by the size of the population (the square of the size variable) so that a bit more than 1 individual lie in each pixel in a concentrated area, whereas one can find values between 0 and 1 when one gets further from the concentrated area
+go_consumers_rescaled = go_consumers*size^2
+gd_consumers_rescaled = gd_consumers*size^2
+bo_consumers_rescaled = bo_consumers*size^2
+bd_consumers_rescaled = bd_consumers*size^2
+
+
+#We can then compute the quantities after accounting for the change in population distribution
+#To be continued
 
 
 
