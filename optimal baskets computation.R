@@ -64,7 +64,7 @@ gamma <- c(gammaGO, gammaGD, gammaBO, gammaBD)
 theta = 1000  
 
 ##### The size of the matrices (i.e. the accuracy of the computation) must also be chosen here.
-step = 0.05
+step = 0.1
 size = 1/step + 1
 
 
@@ -235,77 +235,71 @@ legend("right", legend = c("1", "2", "3"), fill = c("red", "yellow", "blue"))
 
 #2. Graphical representations of how consumers spend their budget in the different lifestyles
 
-generate_heatmap <- function(share, lifestyle, color_palette, legend_title) {
-  # Set the row and column names
-  rownames(share) <- rev_betas
-  colnames(share) <- alphas
+generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_legend = FALSE) {
+  if (!is.null(share)) {
+    # Set the row and column names
+    rownames(share) <- rev_betas
+    colnames(share) <- alphas
+    
+    # Reverse the rows of the matrix to flip the y-axis direction
+    share_reversed <- share[nrow(share):1, ]
+    
+    # Plot the heatmap with the reversed matrix using image
+    image(1:ncol(share_reversed), 1:nrow(share_reversed), t(share_reversed), col = color_palette, axes = FALSE, 
+          main = paste("Share of total income spent in", lifestyle, "lifestyle"), 
+          xlab = "alpha", ylab = "beta")
+    
+    # Add axis labels
+    axis(1, at = 1:ncol(share_reversed), labels = colnames(share_reversed))
+    axis(2, at = 1:nrow(share_reversed), labels = rownames(share_reversed))
+  }
   
-  # Determine the number of colors and percentage cutoffs
-  num_colors <- 5  # Adjust as needed
-  cutoffs <- seq(0, 100, by = 100 / (num_colors - 1))  # Ensure cutoffs match num_colors
-  
-  # Specify the desired size for the main title
-  cex_main <- 0.8  # Adjust this value as needed
-  
-  # Set the global graphical parameter for main title size
-  par(cex.main = cex_main)
-  
-  # Reverse the rows of the matrix to flip the y-axis direction
-  share_reversed <- share[nrow(share):1, ]
-  
-  # Plot the heatmap with the reversed matrix
-  heatmap(share_reversed, scale = "none", Rowv = NA, Colv = NA,
-          col = color_palette,
-          main = paste("Share of total income spent in", lifestyle, "lifestyle (in percentage) - Reference case"),
-          cexRow = 0.7, cexCol = 0.7,
-          ylab = "beta")  # Add labels for x and y axes
-  
-  # Rotate the x-axis label horizontally
-  mtext("alpha", side = 1, line = 2, las = 1)
-  
-  # Create breaks for color mapping
-  breaks <- seq(0, 100, length.out = num_colors + 1)  # num_colors + 1 intervals
-  
-  # Create a named vector associating each unique value in the matrix with a color
-  color_map <- cut(share_reversed, breaks = breaks, include.lowest = TRUE,
-                   labels = color_palette)
-  
-  # Adjust plot margins using par() function
-  par(mar = c(4, 4, 4, 6))  # Increased right margin for better label alignment
-  
-  # Create the legend with inset parameter specifying the distance from the margins
-  legend("right", inset = c(0, 0), legend = as.character(cutoffs), fill = color_palette,
-         title = legend_title,  # Add a title to the legend
-         cex = 0.7, pt.cex = 1.5,  # Adjust cex and pt.cex as needed
-         y.intersp = 1.5, xpd = TRUE)  # Adjust spacing between legend items as needed
+  if (add_legend) {
+    # Determine the number of colors and percentage cutoffs
+    num_colors <- 11  # Adjust as needed
+    cutoffs <- seq(0, 100, by = 100 / (num_colors - 1))  # Ensure cutoffs match num_colors
+    
+    # Create the legend
+    legend("center", legend = as.character(cutoffs), fill = color_palette, title = legend_title, 
+           cex = 0.7, pt.cex = 1.5, y.intersp = 1.5, xpd = TRUE)
+  }
 }
 
-
 # Define color palettes for different lifestyles
-num_colors <- 5  # Ensure this matches the number of intervals
+num_colors <- 11  # Ensure this matches the number of intervals
 color_palette_GO <- colorRampPalette(c("white", "darkgreen"))(num_colors)
 color_palette_GD <- colorRampPalette(c("white", "darkgreen"))(num_colors)
 color_palette_BO <- colorRampPalette(c("white", "brown"))(num_colors)
 color_palette_BD <- colorRampPalette(c("white", "brown"))(num_colors)
 
+# Set up the layout for 2x3 grid of heatmaps and legends
+layout(matrix(c(1, 2, 5, 3, 4, 6), nrow = 2, ncol = 3, byrow = TRUE), widths = c(1, 1, 0.3), heights = c(1, 1))
+
+# Set margins for the heatmaps
+par(mar = c(4, 4, 4, 0))
+
 # Generate heatmap plots for different lifestyles
-heatmap_GO <- generate_heatmap(shareGO, "GO", color_palette_GO, "Shares")
-heatmap_GD <- generate_heatmap(shareGD, "GD", color_palette_GD, "Shares")
-heatmap_BO <- generate_heatmap(shareBO, "BO", color_palette_BO, "Shares")
-heatmap_BD <- generate_heatmap(shareBD, "BD", color_palette_BD, "Shares")
+generate_heatmap(shareGO, "GO", color_palette_GO, "Shares")
+generate_heatmap(shareGD, "GD", color_palette_GD, "Shares")
+generate_heatmap(shareBO, "BO", color_palette_BO, "Shares")
+generate_heatmap(shareBD, "BD", color_palette_BD, "Shares")
 
-# Arrange the heatmaps in a grid
-heatmap_grid <- plot_grid(heatmap_GO, heatmap_GD, heatmap_BO, heatmap_BD, ncol = 2)
+# Add legends
+par(mar = c(4, 0, 4, 0))  # Reduce margins for legends
+plot.new()
+generate_heatmap(NULL, "", color_palette_GO, "Percentages", add_legend = TRUE)
+plot.new()
+generate_heatmap(NULL, "", color_palette_BO, "Percentages", add_legend = TRUE)
 
-# Display the grid
-print(heatmap_grid)
+# Reset the graphical parameters to default
+par(mfrow = c(1, 1))
+
 
 
 
 #3. Compute and plot 'market shares' of the different goods
 
 #Start by computing total quantities consumed of each good
-
 quantity_GO = sum(D1)
 quantity_GD = sum(D2)
 quantity_BO = sum(D3)
@@ -333,7 +327,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Market shares - BO 10% cheaper, Uniformly distributed population",
+  labs(title = "Market shares - Reference case, Uniformly distributed population",
        x = "Lifestyles",
        y = "Percentage of quantities consumed") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -394,7 +388,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Contributions to environmental impacts - BO 10% cheaper, Uniform distribution",
+  labs(title = "Contributions to environmental impacts - Reference case, Uniform distribution",
        x = "Lifestyles",
        y = "Proportion of environmental impacts") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -636,7 +630,6 @@ gd_consumers = pop*dummy_GD
 bo_consumers = pop*dummy_BO
 bd_consumers = pop*dummy_BD
 
-
 #Before computing per capita impacts, we must rescale population matrices by the size of the population (the square of the size variable) so that a bit more than 1 individual lie in each pixel in a concentrated area, whereas one can find values between 0 and 1 when one gets further from the concentrated area
 go_consumers_rescaled = go_consumers*size^2
 gd_consumers_rescaled = gd_consumers*size^2
@@ -645,7 +638,97 @@ bd_consumers_rescaled = bd_consumers*size^2
 
 
 #We can then compute the quantities after accounting for the change in population distribution
-#To be continued
+#This will yield us the market shares for other population distributions
+quantity_GO_nonuniform = sum(D1*go_consumers_rescaled)
+quantity_GD_nonuniform = sum(D2*gd_consumers_rescaled)
+quantity_BO_nonuniform = sum(D3*bo_consumers_rescaled)
+quantity_BD_nonuniform = sum(D4*bd_consumers_rescaled)
+total_quantity_nonuniform = quantity_GO_nonuniform+quantity_GD_nonuniform+quantity_BO_nonuniform+quantity_BD_nonuniform
+
+
+#Then infer the 'market share' of each composite good
+marketshare_GO_nonuniform = (quantity_GO_nonuniform/total_quantity_nonuniform)*100
+marketshare_GD_nonuniform = (quantity_GD_nonuniform/total_quantity_nonuniform)*100
+marketshare_BO_nonuniform = (quantity_BO_nonuniform/total_quantity_nonuniform)*100
+marketshare_BD_nonuniform = (quantity_BD_nonuniform/total_quantity_nonuniform)*100
+
+
+#And plot those market shares in an histogram
+
+consumer_types <- c("GO", "GD", "BO", "BD")
+percentages <- c(marketshare_GO_nonuniform, marketshare_GD_nonuniform, marketshare_BO_nonuniform, marketshare_BD_nonuniform)
+
+# Create a data frame
+data <- data.frame(Category = consumer_types, Percentage = percentages)
+
+# Set colors
+custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen") 
+
+# Create a bar plot (caption to be changed according to the case tested)
+plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Market shares - Reference case, Concentration in the middle",
+       x = "Lifestyles",
+       y = "Percentage of quantities consumed") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
+  theme_minimal() +
+  scale_fill_manual(values = custom_colors, guide="none")
+
+print(plot)
+
+
+## Let's finally compute the associated per capita impacts.
+
+#We can easily adapt the pollution matrices according to the pop scenario
+P1_nonunif = P1*go_consumers_rescaled
+P2_nonunif = P2*gd_consumers_rescaled
+P3_nonunif = P3*bo_consumers_rescaled
+P4_nonunif = P2*bd_consumers_rescaled
+
+#And infer the new contribution of each lifestyle to total pollution
+impact_GO_nonunif = sum(P1_nonunif)
+impact_GD_nonunif = sum(P2_nonunif)
+impact_BO_nonunif = sum(P3_nonunif)
+impact_BD_nonunif = sum(P4_nonunif)
+total_impacts_nonunif = impact_GO_nonunif+impact_GD_nonunif+impact_BO_nonunif+impact_BD_nonunif
+
+contrib_GO_nonunif = (impact_GO_nonunif/total_impacts_nonunif)*100
+contrib_GD_nonunif = (impact_GD_nonunif/total_impacts_nonunif)*100
+contrib_BO_nonunif = (impact_BO_nonunif/total_impacts_nonunif)*100
+contrib_BD_nonunif = (impact_BD_nonunif/total_impacts_nonunif)*100
+
+#Plot the relative contribution of each lifestyle to pollution
+
+consumer_types <- c("GO", "GD", "BO", "BD")
+percentages <- c(contrib_GO_nonunif, contrib_GD_nonunif, contrib_BO_nonunif, contrib_BD_nonunif)
+
+# Create a data frame
+data <- data.frame(Category = consumer_types, Percentage = percentages)
+
+# Set colors
+custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen") 
+
+# Create a bar plot (caption to be changed according to the case tested)
+plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Contributions to environmental impacts - Reference case, Middle concentration",
+       x = "Lifestyles",
+       y = "Proportion of environmental impacts") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
+  theme_minimal() +
+  scale_fill_manual(values = custom_colors, guide="none")
+
+print(plot)
+
+
+
+#And finally per capita impacts, that we compare with the uniform scenario
+totalimpacts_percapita_nonunif = total_impacts_nonunif/(size^2)
+variation_with_unif = ((totalimpacts_percapita_nonunif-totalimpacts_percapita)/totalimpacts_percapita)*100
+
+
+#Store and plot per capita impacts in the different scenarios 
+#A FAIRE avec un pas de 0.05
 
 
 
