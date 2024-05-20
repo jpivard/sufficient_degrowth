@@ -244,10 +244,13 @@ generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_
     # Reverse the rows of the matrix to flip the y-axis direction
     share_reversed <- share[nrow(share):1, ]
     
+    # Calculate the maximum dimension to ensure square heatmaps
+    max_dim <- max(nrow(share_reversed), ncol(share_reversed))
+    
     # Plot the heatmap with the reversed matrix using image
     image(1:ncol(share_reversed), 1:nrow(share_reversed), t(share_reversed), col = color_palette, axes = FALSE, 
           main = paste("Share of total income spent in", lifestyle, "lifestyle"), 
-          xlab = "alpha", ylab = "beta")
+          xlab = "alpha", ylab = "beta", xlim = c(1, max_dim), ylim = c(1, max_dim), asp = 1)
     
     # Add axis labels
     axis(1, at = 1:ncol(share_reversed), labels = colnames(share_reversed))
@@ -256,7 +259,7 @@ generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_
   
   if (add_legend) {
     # Determine the number of colors and percentage cutoffs
-    num_colors <- 11  # Adjust as needed
+    num_colors <- length(color_palette)  # Match the number of intervals
     cutoffs <- seq(0, 100, by = 100 / (num_colors - 1))  # Ensure cutoffs match num_colors
     
     # Create the legend
@@ -293,7 +296,6 @@ generate_heatmap(NULL, "", color_palette_BO, "Percentages", add_legend = TRUE)
 
 # Reset the graphical parameters to default
 par(mfrow = c(1, 1))
-
 
 
 
