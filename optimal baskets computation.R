@@ -36,13 +36,6 @@ library(doParallel)
 library(foreach)
 
 
-# Detect the number of available cores
-num_cores <- detectCores() - 1  # It's a good practice to leave one core free
-
-# Set up the parallel backend to use multiple cores
-cl <- makeCluster(num_cores)
-registerDoParallel(cl)
-
 
 
 ###### We first calibrate the parameters #####
@@ -64,41 +57,40 @@ gamma <- c(gammaGO, gammaGD, gammaBO, gammaBD)
 theta = 1000  
 
 ##### The size of the matrices (i.e. the accuracy of the computation) must also be chosen here.
-step = 0.1
+step = 0.025
 size = 1/step + 1
 
 
 
 ### Let us define an optimization function that loops over all possible baskets for each pair of parameters and chooses for each the one maximizing utility.
 
-opti_function <- function(alpha, beta, R, p, gamma, d_prime, theta) {
-  X1 <- seq(0, R/p[1], by = step)
-  X2 <- seq(0, R/p[2], by = step)
-  X3 <- seq(0, R/p[3], by = step)
-  X4 <- seq(0, R/p[4], by = step)
-  
-  Umax <- -1000  
+
+# Utility Function Definition
+utility_function <- function(x1, x2, x3, x4, alpha, beta, gamma, d_prime, theta) {
+  u_cons <- log(x1 + x2 + x3 + x4 + .Machine$double.eps)
+  u_damage <- -alpha * (theta + d_prime * (gamma[1] * x1 + gamma[2] * x2 + gamma[3] * x3 + gamma[4] * x4))
+  v_status <- beta * (alpha * (x1 + x2) + (1 - alpha) * (x1 + x3))
+  return(u_cons + u_damage + v_status)
+}
+
+# Optimization Function
+opti_function <- function(alpha, beta, R, p, gamma, d_prime, theta, step) {
+  X <- seq(0, R / min(p), by = step)
+  Umax <- -Inf
   xs <- numeric(4)
   
-  for (i in seq_along(X1)) {
-    x1 <- X1[i]
-    for (j in seq_along(X2)) {
-      x2 <- X2[j]
-      if (p[1]*x1 + p[2]*x2 <= R) {
-        for (k in seq_along(X3)) {
-          x3 <- X3[k]
-          if (p[1]*x1 + p[2]*x2 + p[3]*x3 <= R) {
-            x4 <- (R - p[1]*x1 - p[2]*x2 - p[3]*x3)/p[4]
-            u_cons <- log(x1 + x2 + x3 + x4 + .Machine$double.eps)
-            u_damage <- -alpha * (theta + d_prime * (gamma[1]*x1 + gamma[2]*x2 + gamma[3]*x3 + gamma[4]*x4))
-            v_status <- beta * (alpha * (x1 + x2) + (1 - alpha) * (x1 + x3))
-            U <- u_cons +  u_damage +  v_status
-            if (U >= Umax) {
-              Umax <- U
-              xs[1] <- x1
-              xs[2] <- x2
-              xs[3] <- x3
-              xs[4] <- x4
+  for (x1 in X) {
+    for (x2 in X) {
+      if (p[1] * x1 + p[2] * x2 <= R) {
+        for (x3 in X) {
+          if (p[1] * x1 + p[2] * x2 + p[3] * x3 <= R) {
+            x4 <- (R - p[1] * x1 - p[2] * x2 - p[3] * x3) / p[4]
+            if (x4 >= 0) {
+              U <- utility_function(x1, x2, x3, x4, alpha, beta, gamma, d_prime, theta)
+              if (U > Umax) {
+                Umax <- U
+                xs <- c(x1, x2, x3, x4)
+              }
             }
           }
         }
@@ -106,83 +98,104 @@ opti_function <- function(alpha, beta, R, p, gamma, d_prime, theta) {
     }
   }
   
-  xopt <- xs
-  yopt <- Umax
+  return(list(xopt = xs, yopt = Umax))
+}
+
+# Parallel Grid Search Function
+grid_search_parallel <- function(R, p, gamma, d_prime, theta, step) {
+  alphas <- seq(0, 1, by = step)
+  betas <- seq(0, 1, by = step)
+  rev_betas <- rev(betas)
+  size <- length(alphas)
   
-  return(list(xopt = xopt, yopt = yopt))
-}
-
-
-#Test for some specific values of preference parameters
-
-
-#alpha=beta=0
-opti_function(0,0,R,p,gamma,d_prime,theta)
-# Seems OK : such a consumer only consumes the BD good, and we can find the corresponding max utility
-
-#alpha=beta=1
-opti_function(1,1,R,p,gamma,d_prime,theta)
-#It is coherent too : only consumes GD
-
-#What happens in the middle of the alpha distribution and bottom of the beta distrib? There should be mixed consumption according to the previous method
-opti_function(1/2,1/4,R,p,gamma,d_prime,theta)
-#Coherent with the math again : the point (0.5,0.25) is in the GO+GD mixed zone
-
-#CCL : the function seems to work fine.
-
-
-
-#Let us now loop over preference parameters and represent optimal consumption baskets for each couple of coordinates
-
-alphas <- seq(0, 1, by = step)
-betas <- seq(0, 1, by = step)
-rev_alphas <- seq(1, 0, by = -step)
-rev_betas <- seq(1, 0, by = -step)
-A <- matrix(rep(alphas, length(betas)), nrow = length(alphas), byrow = TRUE)
-B <- matrix(rep(rev_betas, length(alphas)), nrow = length(betas), byrow = FALSE)
-
-size <- nrow(A)
-D <- matrix(0, nrow = size, ncol = size)
-D1 <- matrix(0, nrow = size, ncol = size)
-D2 <- matrix(0, nrow = size, ncol = size)
-D3 <- matrix(0, nrow = size, ncol = size)
-D4 <- matrix(0, nrow = size, ncol = size)
-M <- matrix(0, nrow = size, ncol = size)
-
-DD <- list()
-for (k in 1:4) {
-  DD[[k]] <- matrix(0, nrow = size, ncol = size)
-}
-
-for (i in 1:nrow(A)) {
-  for (j in 1:ncol(A)) {
+  A <- matrix(rep(alphas, each = size), nrow = size)
+  B <- matrix(rep(rev_betas, size), nrow = size)
+  
+  # Prepare storage for results
+  results <- vector("list", size * size)
+  
+  # Create a cluster using all available cores
+  cl <- makeCluster(detectCores() - 1) # Use one less core than available
+  
+  # Export necessary variables and functions to the cluster
+  clusterExport(cl, c("A", "B", "R", "p", "gamma", "d_prime", "theta", "step", "opti_function", "utility_function"))
+  
+  # Define the parallelized grid search operation
+  grid_search_task <- function(index) {
+    i <- ((index - 1) %/% size) + 1
+    j <- ((index - 1) %% size) + 1
+    
     alpha <- A[i, j]
     beta <- B[i, j]
     
-    optibasket <- opti_function(alpha, beta, R, p, gamma, d_prime, theta)
+    optibasket <- opti_function(alpha, beta, R, p, gamma, d_prime, theta, step)
     xopt <- optibasket$xopt
     yopt <- optibasket$yopt
     l <- which(xopt > 0)
     
+    result <- list(D = 0, D1 = 0, D2 = 0, D3 = 0, D4 = 0, M = yopt, DD = rep(0, 4))
     if (length(l) > 0) {
-      D[i, j] <- sum(2^(l-1))
-      M[i, j] <- yopt
-      D1[i, j] <- xopt[1]
-      D2[i, j] <- xopt[2]
-      D3[i, j] <- xopt[3]
-      D4[i, j] <- xopt[4]
-      for (k in 1:length(l)) {   #To get the number of goods consumed depending on location in the plane
-        DD[[l[k]]][i, j] <- 1
+      result$D <- sum(2^(l-1))
+      result$D1 <- xopt[1]
+      result$D2 <- xopt[2]
+      result$D3 <- xopt[3]
+      result$D4 <- xopt[4]
+      for (k in l) {
+        result$DD[k] <- 1
       }
     }
+    
+    return(list(i = i, j = j, result = result))
   }
+  
+  # Run the grid search in parallel
+  results <- parLapply(cl, 1:(size * size), grid_search_task)
+  
+  # Stop the cluster
+  stopCluster(cl)
+  
+  # Initialize result matrices
+  D <- matrix(0, nrow = size, ncol = size)
+  D1 <- matrix(0, nrow = size, ncol = size)
+  D2 <- matrix(0, nrow = size, ncol = size)
+  D3 <- matrix(0, nrow = size, ncol = size)
+  D4 <- matrix(0, nrow = size, ncol = size)
+  M <- matrix(0, nrow = size, ncol = size)
+  DD <- lapply(1:4, function(x) matrix(0, nrow = size, ncol = size))
+  
+  # Populate result matrices
+  for (res in results) {
+    i <- res$i
+    j <- res$j
+    D[i, j] <- res$result$D
+    D1[i, j] <- res$result$D1
+    D2[i, j] <- res$result$D2
+    D3[i, j] <- res$result$D3
+    D4[i, j] <- res$result$D4
+    M[i, j] <- res$result$M
+    for (k in 1:4) {
+      DD[[k]][i, j] <- res$result$DD[k]
+    }
+  }
+  
+  return(list(D = D, D1 = D1, D2 = D2, D3 = D3, D4 = D4, M = M, DD = DD, A = A, B = B, alphas = alphas, rev_betas = rev_betas))
 }
 
-#We check the matrices yield the quantities consumed of each good depending on the values of (alpha,beta) i.e. on the position in the graph
-print(D1)
-print(D2)
-print(D3)
-print(D4)
+
+results <- grid_search_parallel(R, p, gamma, d_prime, theta, step)
+
+# Access results and ensure A, B, alphas, and rev_betas are available globally
+D <- results$D
+D1 <- results$D1
+D2 <- results$D2
+D3 <- results$D3
+D4 <- results$D4
+M <- results$M
+DD <- results$DD
+A <- results$A
+B <- results$B
+alphas <- results$alphas
+rev_betas <- results$rev_betas
 
 
 #Computing the budget shares spent in each good (in percentage)
@@ -200,9 +213,6 @@ for (i in 1:nrow(shareGO)) {
     shareBD[i,j]<- (p[4]*D4[i,j]/R)*100
   }
 }
-#OK (99% in the ostentatious exclusive zones because of limited accuracy due to small dimensions being used)
-
-
 
 
 
@@ -249,7 +259,7 @@ generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_
     
     # Plot the heatmap with the reversed matrix using image
     image(1:ncol(share_reversed), 1:nrow(share_reversed), t(share_reversed), col = color_palette, axes = FALSE, 
-          main = paste("Share of total income spent in", lifestyle, "lifestyle"), 
+          main = paste("Share of total income spent in", lifestyle, "lifestyle - Reference case"), 
           xlab = "alpha", ylab = "beta", xlim = c(1, max_dim), ylim = c(1, max_dim), asp = 1)
     
     # Add axis labels
@@ -296,6 +306,8 @@ generate_heatmap(NULL, "", color_palette_BO, "Percentages", add_legend = TRUE)
 
 # Reset the graphical parameters to default
 par(mfrow = c(1, 1))
+
+
 
 
 
@@ -494,7 +506,7 @@ par(mar = c(5, 4, 4, 8))  # c(bottom, left, top, right) - increase the right mar
 # Create the heatmap
 heatmap(P, scale = "none", Rowv = NA, Colv = NA,
         col = color_palette_impacts,
-        main = "Environmental impacts (in units) - BO 10% cheaper",
+        main = "Environmental impacts (in units) - Reference case",
         cexRow = 0.7, cexCol = 0.7,
         ylab = "beta")
 
@@ -502,7 +514,7 @@ heatmap(P, scale = "none", Rowv = NA, Colv = NA,
 mtext("alpha", side = 1, line = 3, las = 1)  # Adjust 'line' parameter to position the label properly
 
 # Create the legend with inset parameter specifying the distance from the margins
-legend("right", inset = c(-0.2, 0), legend = cutoff_labels, fill = color_palette_impacts,
+legend("right", inset = c(-0.1, 0), legend = cutoff_labels, fill = color_palette_impacts,
        title = "Impacts/consumer",  # Add a title to the legend
        cex = 0.7, pt.cex = 1.5,  # Adjust cex and pt.cex as needed
        y.intersp = 1.5, xpd = NA)  # Allow plotting outside the plot region and adjust spacing between legend items
@@ -524,7 +536,7 @@ legend("right", inset = c(-0.2, 0), legend = cutoff_labels, fill = color_palette
 #Basic scenario 2 (2A): two beta laws with the two same shape parameters (bell curves) to model the concentration in the middle of the distribution
 a=b=c=d=2
 
-#Variant (2b) - Only concentrated for environmental sensitivity while uniform for status: the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
+#Variant (2Ab) - Only concentrated for environmental sensitivity while uniform for status: the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
 #a=b=2
 #c=d=1
 
@@ -535,6 +547,16 @@ a=b=c=d=2
 #Scenario 2C : Higher/stringent environmental norm (right-hand concentration)
 #a=c=d=1
 #b=5
+
+
+#Scenario 2D : social image matters less (widespread discretion)
+#a=b=c=1
+#d=5
+
+#Scenario 2E: social image matters more ("Red Queen Economy", Keep Up With the Joneses...)
+#a=b=d=1
+#c=5
+
 
 
 #initialize with an empty matrix
@@ -669,7 +691,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Market shares - Reference case, Concentration in the middle",
+  labs(title = "Market shares - Reference case, Society with high status sensitivity (concentration at the top)",
        x = "Lifestyles",
        y = "Percentage of quantities consumed") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -693,6 +715,7 @@ impact_GD_nonunif = sum(P2_nonunif)
 impact_BO_nonunif = sum(P3_nonunif)
 impact_BD_nonunif = sum(P4_nonunif)
 total_impacts_nonunif = impact_GO_nonunif+impact_GD_nonunif+impact_BO_nonunif+impact_BD_nonunif
+
 
 contrib_GO_nonunif = (impact_GO_nonunif/total_impacts_nonunif)*100
 contrib_GD_nonunif = (impact_GD_nonunif/total_impacts_nonunif)*100
@@ -726,11 +749,56 @@ print(plot)
 
 #And finally per capita impacts, that we compare with the uniform scenario
 totalimpacts_percapita_nonunif = total_impacts_nonunif/(size^2)
-variation_with_unif = ((totalimpacts_percapita_nonunif-totalimpacts_percapita)/totalimpacts_percapita)*100
+totalimpacts_percapita_unif = totalimpacts_percapita  #To be changed depending on cases !
+variation_with_unif = ((totalimpacts_percapita_nonunif- totalimpacts_percapita_unif)/totalimpacts_percapita_unif)*100
 
 
-#Store and plot per capita impacts in the different scenarios 
-#A FAIRE avec un pas de 0.05
+#Store and plot per capita impacts in the different scenarios
+
+#totalimpacts_percapita_2A_ref <- totalimpacts_percapita_nonunif
+#totalimpacts_percapita_2B_ref <- totalimpacts_percapita_nonunif
+#totalimpacts_percapita_2C_ref <- totalimpacts_percapita_nonunif
+#totalimpacts_percapita_2D_ref <- totalimpacts_percapita_nonunif
+#totalimpacts_percapita_2E_ref <- totalimpacts_percapita_nonunif
+
+
+
+# Store per capita impacts and scenario categories in lists or vectors
+categories <- c("Uniform - Both", "Average - Both", "Low - Environment", "High - Environment", "Low - Status", "High - Status")
+per_capita_impacts <- c(
+  totalimpacts_percapita_unif,
+  totalimpacts_percapita_2A_ref,
+  totalimpacts_percapita_2B_ref,
+  totalimpacts_percapita_2C_ref,
+  totalimpacts_percapita_2D_ref,
+  totalimpacts_percapita_2E_ref
+)
+
+# Create a data frame
+data <- data.frame(Category = factor(categories, levels = c("Uniform - Both", "Average - Both", "Low - Environment", "High - Environment", "Low - Status", "High - Status")), Numbers = per_capita_impacts)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Create the bar plot using ggplot2
+plot_pcimpact_ref <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Per capita impacts in the different population scenarios, Reference case",
+    x = "Population concentration scenario - Sensitivity axis",
+    y = "Per capita impacts"
+  ) +
+  theme_minimal() +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  )+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # For better readability
+
+
+# Display the plot
+print(plot_pcimpact_ref)
 
 
 
