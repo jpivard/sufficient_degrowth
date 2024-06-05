@@ -54,7 +54,7 @@ gammaBD <- 2
 gammaBO <- 4
 gamma <- c(gammaGO, gammaGD, gammaBO, gammaBD)
 
-theta = 1000  
+theta = 1000
 
 ##### The size of the matrices (i.e. the accuracy of the computation) must also be chosen here.
 step = 0.025
@@ -199,7 +199,6 @@ rev_betas <- results$rev_betas
 
 
 #Computing the budget shares spent in each good (in percentage)
-
 shareGO<- matrix(0, nrow = nrow(A), ncol = ncol(A))
 shareGD <- matrix(0, nrow = nrow(A), ncol = ncol(A))
 shareBO <- matrix(0, nrow = nrow(A), ncol = ncol(A))
@@ -218,8 +217,163 @@ for (i in 1:nrow(shareGO)) {
 
 ###### Graphical representations of the quantity matrices ########
 
+
 #1. Number of goods consumed 
 
+#As there seems to be a progressive convergence to 100% for some points theoretically located in ostentatious exclusive zones when matrices get bigger, we first need to check utilities when more than 99% of the budget is spent on a given good and compare them with the utility of allocating the whole budget on the good
+
+#Step 1 : Create a dummy matrix for each good that locates the pixels that are concerned by the problem
+
+# Initialize the matrix 'checkexclusives' with the same dimensions as 'A'
+n_rows <- nrow(A)
+n_cols <- ncol(A)
+checkexclusivesGO <- matrix(NA, nrow = n_rows, ncol = n_cols)
+checkexclusivesGD <- matrix(NA, nrow = n_rows, ncol = n_cols)
+checkexclusivesBO <- matrix(NA, nrow = n_rows, ncol = n_cols)
+checkzerosBD <- matrix(NA, nrow = n_rows, ncol = n_cols)
+
+
+#We first create matrices with positive coefficients only in the concerned pixels 
+for (i in 1:nrow(shareGO)) {
+  for (j in 1:ncol(shareGO)) {
+    checkexclusivesGO[i,j]<- shareGO[i,j]-98.99
+    checkexclusivesBO[i,j]<- shareBO[i,j]-98.99
+    checkzerosBD[i,j]<- 1-shareBD[i,j]     #For BD, we need to check absence of consumption rather than exclusive consumption as we see many points with tiny shares of the budget being spent in the good
+  }
+}
+#For GD not necessary as we already have the expected results in the exclusive consumption zones.
+
+
+#Convert to dummy matrices where positive coefficients are converted into 1s and the rest to zeros
+create_dummy_matrix <- function(matrix_input) {
+  # Create the dummy matrix
+  dummy_matrix <- as.numeric(matrix_input > 0)
+  # Convert the dummy_matrix to the same dimensions as the original matrix
+  dummy_matrix <- matrix(dummy_matrix, nrow = nrow(matrix_input), ncol = ncol(matrix_input))
+  # Return the dummy matrix
+  return(dummy_matrix)
+}
+
+dummy_GOcheck <- create_dummy_matrix(checkexclusivesGO)
+dummy_BOcheck <- create_dummy_matrix(checkexclusivesBO)
+dummy_BDcheck <- create_dummy_matrix(checkzerosBD)
+#For each good, we now have all the pixels where we need to compare utilities outside the grid search.
+#Code is OK up to this point !
+
+
+#Current utility levels (before double checking those pixels) are stored in the M matrix.
+#We would like to compare those levels to utility levels that would be achieved in the theoretical case of exclusive consumptions (absence of consumption for BD) for all coefficients equal to one in the dummy matrix.
+
+# Initialize new utility matrices for comparisons
+M_GOcheck <- matrix(0, nrow = nrow(A), ncol = ncol(A))
+M_BOcheck <- matrix(0, nrow = nrow(A), ncol = ncol(A))
+M_BDcheck <- matrix(0, nrow = nrow(A), ncol = ncol(A))
+
+# Initialize matrices to track which utility value is maximized
+maximizing_GO <- matrix(FALSE, nrow = nrow(A), ncol = ncol(A))
+maximizing_BO <- matrix(FALSE, nrow = nrow(A), ncol = ncol(A))
+maximizing_BD <- matrix(FALSE, nrow = nrow(A), ncol = ncol(A))
+
+# Function to compute utility when only one good is consumed (except D4 where it is not consumed)
+compute_utility_exclusive <- function(good_index, alpha, beta, gamma, d_prime, theta, R, p) {
+  x_new <- rep(0, 4)
+  if (good_index != 4) {
+    x_new[good_index] <- R / p[good_index]
+  }
+  U_exclusive <- utility_function(x_new[1], x_new[2], x_new[3], x_new[4], alpha, beta, gamma, d_prime, theta)
+  return(list(U_exclusive = U_exclusive, x_new = x_new))
+}
+
+# Function to compute utility with x4 set to zero
+compute_utility_no_x4 <- function(alpha, beta, gamma, d_prime, theta, R, p, D1, D2, D3) {
+  x_new <- c(D1, D2, D3, 0)  # Set x4 to zero
+  U_no_x4 <- utility_function(x_new[1], x_new[2], x_new[3], x_new[4], alpha, beta, gamma, d_prime, theta)
+  return(list(U_no_x4 = U_no_x4, x_new = x_new))
+}
+
+# Loop through the elements of the dummy matrices
+for (i in 1:nrow(dummy_GOcheck)) {
+  for (j in 1:ncol(dummy_GOcheck)) {
+    if (dummy_GOcheck[i, j] == 1) {
+      alpha <- A[i, j]
+      beta <- B[i, j]
+      
+      # For dummy_GOcheck
+      result <- compute_utility_exclusive(1, alpha, beta, gamma, d_prime, theta, R, p)
+      if (result$U_exclusive > M[i, j]) {
+        M[i, j] <- result$U_exclusive
+        D1[i, j] <- result$x_new[1]
+        D2[i, j] <- result$x_new[2]
+        D3[i, j] <- result$x_new[3]
+        D4[i, j] <- result$x_new[4]
+        maximizing_GO[i, j] <- TRUE
+      }
+    }
+    
+    if (dummy_BOcheck[i, j] == 1) {
+      alpha <- A[i, j]
+      beta <- B[i, j]
+      
+      # For dummy_BOcheck
+      result <- compute_utility_exclusive(3, alpha, beta, gamma, d_prime, theta, R, p)
+      if (result$U_exclusive > M[i, j]) {
+        M[i, j] <- result$U_exclusive
+        D1[i, j] <- result$x_new[1]
+        D2[i, j] <- result$x_new[2]
+        D3[i, j] <- result$x_new[3]
+        D4[i, j] <- result$x_new[4]
+        maximizing_BO[i, j] <- TRUE
+      }
+    }
+    
+    if (dummy_BDcheck[i, j] == 1) {
+      alpha <- A[i, j]
+      beta <- B[i, j]
+      
+      # For dummy_BDcheck
+      result <- compute_utility_no_x4(alpha, beta, gamma, d_prime, theta, R, p, D1[i, j], D2[i, j], D3[i, j])
+      if (result$U_no_x4 > M[i, j]) {
+        M[i, j] <- result$U_no_x4
+        # Transfer residual revenue to the most consumed good
+        max_consumed_good <- which.max(c(D1[i, j], D2[i, j], D3[i, j]))
+        D4[i, j] <- 0
+        D[max_consumed_good, i, j] <- D[max_consumed_good, i, j] + (R - sum(p[-max_consumed_good] * c(D1[i, j], D2[i, j], D3[i, j])))
+        maximizing_BD[i, j] <- TRUE
+      }
+    }
+  }
+}
+
+# Recalculate the DD list to reflect updated quantities
+for (i in 1:nrow(DD[[1]])) {
+  for (j in 1:ncol(DD[[1]])) {
+    DD[[1]][i, j] <- ifelse(D1[i, j] > 0, 1, 0)
+    DD[[2]][i, j] <- ifelse(D2[i, j] > 0, 1, 0)
+    DD[[3]][i, j] <- ifelse(D3[i, j] > 0, 1, 0)
+    DD[[4]][i, j] <- ifelse(D4[i, j] > 0, 1, 0)
+  }
+}
+
+# Now M contains the updated utility levels and D1-D4 contain the updated quantities
+comparison_results <- list(M = M, D1 = D1, D2 = D2, D3 = D3, D4 = D4, DD = DD)
+
+
+
+
+
+#Now recompute the budget shares 
+for (i in 1:nrow(shareGO)) {
+  for (j in 1:ncol(shareGO)) {
+    shareGO[i,j]<- (p[1]*D1[i,j]/R)*100
+    shareGD[i,j]<- (p[2]*D2[i,j]/R)*100
+    shareBO[i,j]<- (p[3]*D3[i,j]/R)*100
+    shareBD[i,j]<- (p[4]*D4[i,j]/R)*100
+  }
+}
+
+
+#We now have the 'consolidated' budget share matrices after checking all points in the exclusive zones are really optimized.
+#Let's plot the number of goods consumed per pixel 
 
 #Computing the size of global solutions = Compute the sum of DD{1}, DD{2}, DD{3}, and DD{4} in order to get the number of goods consumed in each point
 S <- DD[[1]] + DD[[2]] + DD[[3]] + DD[[4]]
@@ -243,6 +397,8 @@ legend("right", legend = c("1", "2", "3"), fill = c("red", "yellow", "blue"))
 
 
 
+
+
 #2. Graphical representations of how consumers spend their budget in the different lifestyles
 
 generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_legend = FALSE) {
@@ -259,7 +415,7 @@ generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_
     
     # Plot the heatmap with the reversed matrix using image
     image(1:ncol(share_reversed), 1:nrow(share_reversed), t(share_reversed), col = color_palette, axes = FALSE, 
-          main = paste("Share of total income spent in", lifestyle, "lifestyle - Reference case"), 
+          main = paste("Share of total income spent in", lifestyle, "lifestyle - 'Degrowth'"), 
           xlab = "alpha", ylab = "beta", xlim = c(1, max_dim), ylim = c(1, max_dim), asp = 1)
     
     # Add axis labels
@@ -341,7 +497,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Market shares - Reference case, Uniformly distributed population",
+  labs(title = "Market shares - 'Degrowth' (20% drop in income), Uniformly distributed population",
        x = "Lifestyles",
        y = "Percentage of quantities consumed") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -506,7 +662,7 @@ par(mar = c(5, 4, 4, 8))  # c(bottom, left, top, right) - increase the right mar
 # Create the heatmap
 heatmap(P, scale = "none", Rowv = NA, Colv = NA,
         col = color_palette_impacts,
-        main = "Environmental impacts (in units) - Reference case",
+        main = "Environmental impacts (in units) - Simple degrowth case (20% less income)",
         cexRow = 0.7, cexCol = 0.7,
         ylab = "beta")
 
@@ -539,6 +695,7 @@ a=b=c=d=2
 #Variant (2Ab) - Only concentrated for environmental sensitivity while uniform for status: the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
 #a=b=2
 #c=d=1
+
 
 #Scenario 2B: Lower/laxer environmental norm (concentration on the left, beta law with shape parameters 5 and 1 on alpha, uniform on beta).
 #a=5
@@ -634,14 +791,6 @@ sum(pop)
 
 
 # Step 1 : Define a function to create a dummy matrix corresponding to consumers (or not) of the lifestyle
-create_dummy_matrix <- function(matrix_input) {
-  # Create the dummy matrix
-  dummy_matrix <- as.numeric(matrix_input > 0)
-  # Convert the dummy_matrix to the same dimensions as the original matrix
-  dummy_matrix <- matrix(dummy_matrix, nrow = nrow(matrix_input), ncol = ncol(matrix_input))
-  # Return the dummy matrix
-  return(dummy_matrix)
-}
 
 dummy_GO <- create_dummy_matrix(D1)
 dummy_GD <- create_dummy_matrix(D2)
@@ -691,7 +840,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Market shares - Reference case, Society with high status sensitivity (concentration at the top)",
+  labs(title = "Market shares - Degrowth case, Status-conscious society (concentration at the top)",
        x = "Lifestyles",
        y = "Percentage of quantities consumed") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -748,9 +897,12 @@ print(plot)
 
 
 #And finally per capita impacts, that we compare with the uniform scenario
-totalimpacts_percapita_nonunif = total_impacts_nonunif/(size^2)
-totalimpacts_percapita_unif = totalimpacts_percapita  #To be changed depending on cases !
-variation_with_unif = ((totalimpacts_percapita_nonunif- totalimpacts_percapita_unif)/totalimpacts_percapita_unif)*100
+totalimpacts_percapita_degrowth_nonunif = total_impacts_nonunif/(size^2)
+totalimpacts_percapita_degrowth_unif = totalimpacts_percapita  #Two next lines to be changed depending on cases !
+variation_with_unif = ((totalimpacts_percapita_degrowth_nonunif- totalimpacts_percapita_degrowth_unif)/totalimpacts_percapita_degrowth_unif)*100
+
+
+
 
 
 #Store and plot per capita impacts in the different scenarios
@@ -801,6 +953,53 @@ plot_pcimpact_ref <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)
 print(plot_pcimpact_ref)
 
 
+#Compare degrowth cases across scenarios
 
+
+#Store and plot per capita impacts in the different cases
+
+#totalimpacts_percapita_degrowth_unif <- totalimpacts_percapita 
+#totalimpacts_percapita_degrowth_2A <- totalimpacts_percapita_degrowth_nonunif
+#totalimpacts_percapita_degrowth_2B <- totalimpacts_percapita_degrowth_nonunif
+#totalimpacts_percapita_degrowth_2C<- totalimpacts_percapita_degrowth_nonunif
+#totalimpacts_percapita_degrowth_2D <- totalimpacts_percapita_degrowth_nonunif
+#totalimpacts_percapita_degrowth_2E <- totalimpacts_percapita_degrowth_nonunif
+
+#We now plot the different degrowth scenarios (depending on evolution of preferences)
+
+# Store per capita impacts and scenario categories in lists or vectors
+categories <- c("Uniform-Both", "Average-Both", "Low - Environment", "High - Environment", "Low - Status", "High - Status")
+per_capita_impacts <- c(
+  totalimpacts_percapita_degrowth_unif,
+  totalimpacts_percapita_degrowth_2A,
+  totalimpacts_percapita_degrowth_2B,
+  totalimpacts_percapita_degrowth_2C,
+  totalimpacts_percapita_degrowth_2D,
+  totalimpacts_percapita_degrowth_2E
+)
+
+# Create a data frame
+data <- data.frame(Category = factor(categories, levels = c("Uniform-Both", "Average-Both", "Low - Environment", "High - Environment", "Low - Status", "High - Status")), Numbers = per_capita_impacts)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Create the bar plot using ggplot2
+plot_pcimpact_degrowth <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Per capita impacts in different degrowth scenarios",
+    x = "Scenarios (type of population distribution concentration - sensitivity axis)",
+    y = "Per capita impacts"
+  ) +
+  theme_minimal() +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  )
+
+# Display the plot
+print(plot_pcimpact_degrowth)
 
 
