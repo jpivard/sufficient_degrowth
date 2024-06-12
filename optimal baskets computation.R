@@ -21,6 +21,8 @@ rm(list=ls())
 #install.packages("foreach")
 
 
+# Load necessary libraries
+
 library(graphics)
 library(rgl)
 library("reshape")
@@ -30,6 +32,8 @@ library("plotly")
 library(RColorBrewer)
 library("gridExtra")
 library(cowplot)
+library(grDevices)
+
 
 library(parallel)
 library(doParallel)
@@ -241,7 +245,7 @@ for (i in 1:nrow(shareGO)) {
     checkzerosBD[i,j]<- 1-shareBD[i,j]     #For BD, we need to check absence of consumption rather than exclusive consumption as we see many points with tiny shares of the budget being spent in the good
   }
 }
-#For GD not necessary as we already have the expected results in the exclusive consumption zones.
+#For GD not necessary as we already have the expected results (100% budget spent in the good) in the exclusive consumption zones.
 
 
 #Convert to dummy matrices where positive coefficients are converted into 1s and the rest to zeros
@@ -258,11 +262,35 @@ dummy_GOcheck <- create_dummy_matrix(checkexclusivesGO)
 dummy_BOcheck <- create_dummy_matrix(checkexclusivesBO)
 dummy_BDcheck <- create_dummy_matrix(checkzerosBD)
 #For each good, we now have all the pixels where we need to compare utilities outside the grid search.
-#Code is OK up to this point !
 
 
 #Current utility levels (before double checking those pixels) are stored in the M matrix.
 #We would like to compare those levels to utility levels that would be achieved in the theoretical case of exclusive consumptions (absence of consumption for BD) for all coefficients equal to one in the dummy matrix.
+
+checkexclusivesGO <- matrix(NA, nrow = n_rows, ncol = n_cols)
+checkexclusivesGD <- matrix(NA, nrow = n_rows, ncol = n_cols)
+checkexclusivesBO <- matrix(NA, nrow = n_rows, ncol = n_cols)
+checkzerosBD <- matrix(NA, nrow = n_rows, ncol = n_cols)
+
+# We first create matrices with positive coefficients only in the concerned pixels
+for (i in 1:nrow(shareGO)) {
+  for (j in 1:ncol(shareGO)) {
+    checkexclusivesGO[i,j] <- shareGO[i,j] - 98.99
+    checkexclusivesBO[i,j] <- shareBO[i,j] - 98.99
+    checkzerosBD[i,j] <- 1 - shareBD[i,j]  # For BD, we need to check absence of consumption rather than exclusive consumption as we see many points with tiny shares of the budget being spent in the good
+  }
+}
+
+# Convert to dummy matrices where positive coefficients are converted into 1s and the rest to zeros
+create_dummy_matrix <- function(matrix_input) {
+  dummy_matrix <- as.numeric(matrix_input > 0)
+  dummy_matrix <- matrix(dummy_matrix, nrow = nrow(matrix_input), ncol = ncol(matrix_input))
+  return(dummy_matrix)
+}
+
+dummy_GOcheck <- create_dummy_matrix(checkexclusivesGO)
+dummy_BOcheck <- create_dummy_matrix(checkexclusivesBO)
+dummy_BDcheck <- create_dummy_matrix(checkzerosBD)
 
 # Initialize new utility matrices for comparisons
 M_GOcheck <- matrix(0, nrow = nrow(A), ncol = ncol(A))
@@ -289,6 +317,40 @@ compute_utility_no_x4 <- function(alpha, beta, gamma, d_prime, theta, R, p, D1, 
   x_new <- c(D1, D2, D3, 0)  # Set x4 to zero
   U_no_x4 <- utility_function(x_new[1], x_new[2], x_new[3], x_new[4], alpha, beta, gamma, d_prime, theta)
   return(list(U_no_x4 = U_no_x4, x_new = x_new))
+}
+
+# Function to compute utility with various allocations of residual revenue
+compute_utility_with_allocations <- function(alpha, beta, gamma, d_prime, theta, R, p, D1, D2, D3) {
+  max_utility <- -Inf
+  best_allocation <- c(D1, D2, D3, 0)
+  
+  # Get indices of goods that have positive quantities
+  positive_indices <- which(c(D1, D2, D3) > 0)
+  
+  # Total initial consumption expenditure
+  initial_expenditure <- sum(p[1:3] * c(D1, D2, D3))
+  
+  # Residual revenue to allocate
+  residual_revenue <- R - initial_expenditure
+  
+  # Generate all combinations of allocating residual revenue to positive goods
+  if (length(positive_indices) > 0) {
+    n <- length(positive_indices)
+    step <- residual_revenue / 10000  # Change this step size as needed for more precision or speed
+    for (alloc in expand.grid(rep(list(seq(0, residual_revenue, by = step)), n))) {
+      if (sum(alloc) <= residual_revenue) {
+        allocation <- c(D1, D2, D3)
+        allocation[positive_indices] <- allocation[positive_indices] + alloc / p[positive_indices]
+        utility <- utility_function(allocation[1], allocation[2], allocation[3], 0, alpha, beta, gamma, d_prime, theta)
+        if (utility > max_utility) {
+          max_utility <- utility
+          best_allocation <- c(allocation, 0)
+        }
+      }
+    }
+  }
+  
+  return(list(U_best = max_utility, x_new = best_allocation))
 }
 
 # Loop through the elements of the dummy matrices
@@ -334,10 +396,7 @@ for (i in 1:nrow(dummy_GOcheck)) {
       result <- compute_utility_no_x4(alpha, beta, gamma, d_prime, theta, R, p, D1[i, j], D2[i, j], D3[i, j])
       if (result$U_no_x4 > M[i, j]) {
         M[i, j] <- result$U_no_x4
-        # Transfer residual revenue to the most consumed good
-        max_consumed_good <- which.max(c(D1[i, j], D2[i, j], D3[i, j]))
         D4[i, j] <- 0
-        D[max_consumed_good, i, j] <- D[max_consumed_good, i, j] + (R - sum(p[-max_consumed_good] * c(D1[i, j], D2[i, j], D3[i, j])))
         maximizing_BD[i, j] <- TRUE
       }
     }
@@ -354,10 +413,30 @@ for (i in 1:nrow(DD[[1]])) {
   }
 }
 
+# Check for D4 coefficients still below 0.01 but different from zero and update matrices again if necessary
+for (i in 1:nrow(D4)) {
+  for (j in 1:ncol(D4)) {
+    if (D4[i, j] < 0.01 && D4[i, j] > 0) {
+      alpha <- A[i, j]
+      beta <- B[i, j]
+      
+      # Compare utilities for optimal distribution excluding D4
+      result <- compute_utility_with_allocations(alpha, beta, gamma, d_prime, theta, R, p, D1[i, j], D2[i, j], D3[i, j])
+      current_utility <- M[i, j]
+      
+      if (result$U_best > current_utility) {
+        M[i, j] <- result$U_best
+        D1[i, j] <- result$x_new[1]
+        D2[i, j] <- result$x_new[2]
+        D3[i, j] <- result$x_new[3]
+        D4[i, j] <- 0
+      }
+    }
+  }
+}
+
 # Now M contains the updated utility levels and D1-D4 contain the updated quantities
 comparison_results <- list(M = M, D1 = D1, D2 = D2, D3 = D3, D4 = D4, DD = DD)
-
-
 
 
 
@@ -399,6 +478,9 @@ legend("right", legend = c("1", "2", "3"), fill = c("red", "yellow", "blue"))
 
 
 
+
+
+
 #2. Graphical representations of how consumers spend their budget in the different lifestyles
 
 generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_legend = FALSE) {
@@ -415,7 +497,7 @@ generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_
     
     # Plot the heatmap with the reversed matrix using image
     image(1:ncol(share_reversed), 1:nrow(share_reversed), t(share_reversed), col = color_palette, axes = FALSE, 
-          main = paste("Share of total income spent in", lifestyle, "lifestyle - 'Degrowth'"), 
+          main = paste("Share of total income spent in", lifestyle, "lifestyle - Reference case"), 
           xlab = "alpha", ylab = "beta", xlim = c(1, max_dim), ylim = c(1, max_dim), asp = 1)
     
     # Add axis labels
@@ -627,56 +709,50 @@ print(plot_pcimpact_unif)
 
 # Pollution/Environmental impacts per consumer type 
 
-# Rename rows and columns
+
+# Define the matrix P with rownames and colnames
 rownames(P) <- rev_betas
 colnames(P) <- alphas
 
 # Reverse the rows of the matrix to flip the y-axis direction
 P <- P[nrow(P):1, ]
 
-# Determine the number of colors and intervals
-num_colors <- 6  # Adjust as needed
-color_palette_impacts <- c("darkgreen", "lightgreen", "yellow", "orange", "red", "brown")
+# Determine the number of colors and create a continuous color palette
+num_colors <- 100  # Use 100 colors for a smooth gradient
+color_palette <- colorRampPalette(c("darkgreen", "lightgreen", "yellow", "orange", "red", "brown"))(num_colors)
 
 # Calculate the range and create breaks based on equal intervals
 min_val <- min(P)
 max_val <- max(P)
 breaks <- seq(min_val, max_val, length.out = num_colors + 1)
 
-# Round the break values to the next highest integer
-breaks_rounded <- ceiling(breaks)
-
-# Generate labels for the legend based on the intervals of the rounded breaks
-cutoff_labels <- paste0("[", breaks_rounded[-(num_colors + 1)], ", ", breaks_rounded[-1], "]")
-
 # Create a named vector associating each unique value in the matrix with a color
-color_map <- cut(P, breaks = breaks, include.lowest = TRUE, labels = color_palette_impacts)
-
-# Specify the desired size for the main title
-cex_main <- 0.8  # Adjust this value as needed
+color_map <- cut(P, breaks = breaks, include.lowest = TRUE, labels = color_palette)
 
 # Adjust plot margins using par() function before creating the heatmap
 # Increase the bottom margin to make space for the x-axis label
-par(mar = c(5, 4, 4, 8))  # c(bottom, left, top, right) - increase the right margin
+par(mar = c(5,6,6,7))  # c(bottom, left, top, right) - increase the bottom margin
 
 # Create the heatmap
 heatmap(P, scale = "none", Rowv = NA, Colv = NA,
-        col = color_palette_impacts,
-        main = "Environmental impacts (in units) - Simple degrowth case (20% less income)",
+        col = color_palette,
+        main = "Environmental impacts (in units) - Reference case",
         cexRow = 0.7, cexCol = 0.7,
         ylab = "beta")
 
 # Add the x-axis label after creating the heatmap
 mtext("alpha", side = 1, line = 3, las = 1)  # Adjust 'line' parameter to position the label properly
 
-# Create the legend with inset parameter specifying the distance from the margins
-legend("right", inset = c(-0.1, 0), legend = cutoff_labels, fill = color_palette_impacts,
+# Add the y-axis label
+mtext("beta", side = 2, line = 3, las = 1)
+
+# Create the legend
+legend_labels <- seq(min_val, max_val, length.out = 10)
+legend_colors <- colorRampPalette(c("darkgreen", "lightgreen", "yellow", "orange", "red", "brown"))(10)
+legend("right", inset = c(-0.25, 0), legend = round(legend_labels, 2), fill = legend_colors,
        title = "Impacts/consumer",  # Add a title to the legend
        cex = 0.7, pt.cex = 1.5,  # Adjust cex and pt.cex as needed
        y.intersp = 1.5, xpd = NA)  # Allow plotting outside the plot region and adjust spacing between legend items
-
-
-
 
 
 
@@ -690,12 +766,14 @@ legend("right", inset = c(-0.1, 0), legend = cutoff_labels, fill = color_palette
 ##SCENARIO CHOICE - Assign values to shape parameters according to the scenario 
 
 #Basic scenario 2 (2A): two beta laws with the two same shape parameters (bell curves) to model the concentration in the middle of the distribution
-a=b=c=d=2
+#a=b=c=d=2
 
-#Variant (2Ab) - Only concentrated for environmental sensitivity while uniform for status: the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
+#Variant : Only concentrated at the middle for environmental sensitivity while uniform for social image: the shape parameters are changed (the beta parameter is now assumed to follow a uniform distribution, i.e. a beta distribution with c=d=1).
 #a=b=2
 #c=d=1
 
+
+#The 4 next scenarios hold preferences constant relative to baseline (i.e. uniform) on one distribution and only vary the other.
 
 #Scenario 2B: Lower/laxer environmental norm (concentration on the left, beta law with shape parameters 5 and 1 on alpha, uniform on beta).
 #a=5
@@ -705,7 +783,6 @@ a=b=c=d=2
 #a=c=d=1
 #b=5
 
-
 #Scenario 2D : social image matters less (widespread discretion)
 #a=b=c=1
 #d=5
@@ -714,6 +791,43 @@ a=b=c=d=2
 #a=b=d=1
 #c=5
 
+
+#New scenarios for a more in depth comparison. We divide the plane into 9 squares of population concentration that we successively study 
+
+#Square A (North-West) : high social image, low environment  
+#a=c=5
+#b=d=1
+
+#Square B (Center-North) : high social image, average environment
+#a=b=c=5
+#d=1
+
+#Square C (North-East) : high social image, high environment
+#a=d=1
+#b=c=5
+
+#Square D (Center-West) : average social image, low environment
+#a=c=d=5
+#b=1
+
+#Square E (Center) : average social image, average environment
+#a=b=c=d=5
+
+#Square F (Center-East) : average social image, high environment
+#b=c=d=5
+#a=1
+
+#Square G (South-West) : low social image, low environment
+#a=d=5
+#b=c=1
+
+#Square H (Center-South) : low social image, average environment
+#c=1
+#a=b=d=5
+
+#Square G (South-West) : low social image, high environment
+a=c=1
+b=d=5
 
 
 #initialize with an empty matrix
@@ -791,7 +905,6 @@ sum(pop)
 
 
 # Step 1 : Define a function to create a dummy matrix corresponding to consumers (or not) of the lifestyle
-
 dummy_GO <- create_dummy_matrix(D1)
 dummy_GD <- create_dummy_matrix(D2)
 dummy_BO <- create_dummy_matrix(D3)
@@ -808,7 +921,6 @@ go_consumers_rescaled = go_consumers*size^2
 gd_consumers_rescaled = gd_consumers*size^2
 bo_consumers_rescaled = bo_consumers*size^2
 bd_consumers_rescaled = bd_consumers*size^2
-
 
 #We can then compute the quantities after accounting for the change in population distribution
 #This will yield us the market shares for other population distributions
@@ -840,7 +952,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Market shares - Degrowth case, Status-conscious society (concentration at the top)",
+  labs(title = "Market shares - Baseline case, High environment, Low social image",
        x = "Lifestyles",
        y = "Percentage of quantities consumed") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -897,9 +1009,10 @@ print(plot)
 
 
 #And finally per capita impacts, that we compare with the uniform scenario
-totalimpacts_percapita_degrowth_nonunif = total_impacts_nonunif/(size^2)
-totalimpacts_percapita_degrowth_unif = totalimpacts_percapita  #Two next lines to be changed depending on cases !
-variation_with_unif = ((totalimpacts_percapita_degrowth_nonunif- totalimpacts_percapita_degrowth_unif)/totalimpacts_percapita_degrowth_unif)*100
+#Next lines to be changed depending on cases !
+totalimpacts_percapita_ref_nonunif = total_impacts_nonunif/(size^2)
+totalimpacts_percapita_ref_unif = totalimpacts_percapita  
+variation_with_unif = ((totalimpacts_percapita_ref_nonunif- totalimpacts_percapita_ref_unif)/totalimpacts_percapita_ref_unif)*100
 
 
 
@@ -907,18 +1020,81 @@ variation_with_unif = ((totalimpacts_percapita_degrowth_nonunif- totalimpacts_pe
 
 #Store and plot per capita impacts in the different scenarios
 
-#totalimpacts_percapita_2A_ref <- totalimpacts_percapita_nonunif
-#totalimpacts_percapita_2B_ref <- totalimpacts_percapita_nonunif
-#totalimpacts_percapita_2C_ref <- totalimpacts_percapita_nonunif
-#totalimpacts_percapita_2D_ref <- totalimpacts_percapita_nonunif
-#totalimpacts_percapita_2E_ref <- totalimpacts_percapita_nonunif
+#totalimpacts_percapita_2A_ref <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_2B_ref <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_2C_ref <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_2D_ref <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_2E_ref <- totalimpacts_percapita_ref_nonunif
+
+#totalimpacts_percapita_squareA <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_squareB <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_squareC <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_squareD <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_squareE <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_squareF <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_squareG <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_squareH <- totalimpacts_percapita_ref_nonunif
+#totalimpacts_percapita_squareI <- totalimpacts_percapita_ref_nonunif
 
 
 
 # Store per capita impacts and scenario categories in lists or vectors
-categories <- c("Uniform - Both", "Average - Both", "Low - Environment", "High - Environment", "Low - Status", "High - Status")
+categories <- c("Uniform", "A", "B","C","D","E","F","G","H","I")
 per_capita_impacts <- c(
-  totalimpacts_percapita_unif,
+  totalimpacts_percapita_ref_unif,
+  totalimpacts_percapita_squareA,
+  totalimpacts_percapita_squareB,
+  totalimpacts_percapita_squareC,
+  totalimpacts_percapita_squareD,
+  totalimpacts_percapita_squareE,
+  totalimpacts_percapita_squareF,
+  totalimpacts_percapita_squareG,
+  totalimpacts_percapita_squareH,
+  totalimpacts_percapita_squareI
+)
+
+# Create a data frame
+data <- data.frame(
+  Category = factor(categories, levels = categories),
+  Numbers = per_capita_impacts
+)
+
+# Reorder the Category factor based on descending Numbers
+data <- data[order(data$Numbers, decreasing = TRUE), ]
+data$Category <- factor(data$Category, levels = data$Category)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Create the bar plot using ggplot2
+plot_pcimpact_ref <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Per capita impacts in the different population scenarios, Reference case",
+    x = "Population concentration scenario",
+    y = "Per capita impacts"
+  ) +
+  theme_minimal() +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # For better readability
+
+# Display the plot
+print(plot_pcimpact_ref)
+
+
+
+
+
+
+
+# Store per capita impacts and scenario categories in lists or vectors
+categories <- c("Uniform - Both", "Average - Both", "Low - Environment", "High - Environment", "Low - Social image", "High - Social image")
+per_capita_impacts <- c(
+  totalimpacts_percapita_ref_unif,
   totalimpacts_percapita_2A_ref,
   totalimpacts_percapita_2B_ref,
   totalimpacts_percapita_2C_ref,
@@ -927,7 +1103,7 @@ per_capita_impacts <- c(
 )
 
 # Create a data frame
-data <- data.frame(Category = factor(categories, levels = c("Uniform - Both", "Average - Both", "Low - Environment", "High - Environment", "Low - Status", "High - Status")), Numbers = per_capita_impacts)
+data <- data.frame(Category = factor(categories, levels = c("Uniform - Both", "Average - Both", "Low - Environment", "High - Environment", "Low - Social image", "High - Social image")), Numbers = per_capita_impacts)
 
 # Set custom colors for the gradient fill
 custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
@@ -951,6 +1127,11 @@ plot_pcimpact_ref <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)
 
 # Display the plot
 print(plot_pcimpact_ref)
+
+
+
+
+
 
 
 #Compare degrowth cases across scenarios
