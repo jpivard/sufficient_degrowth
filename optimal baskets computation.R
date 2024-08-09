@@ -51,13 +51,13 @@ library(fields)
 ###### We first calibrate the parameters #####
 
 R = 16
-p_go = 3.03
-p_gd = 2.02
-p_bo = 2.04
-p_bd = 1.08
+p_go = 3
+p_gd = 2
+p_bo = 2
+p_bd = 1
 p <- c(p_go,p_gd,p_bo,p_bd)
 
-d_prime = 0.03
+d_prime = 0.01
 gammaGO <- 1
 gammaGD <- 0.8
 gammaBD <- 2.5
@@ -224,16 +224,12 @@ for (i in 1:nrow(shareGO)) {
 }
 
 
-
-
-
 ###### Graphical representations of the quantity matrices ########
 
 
 #1. Number of goods consumed 
 
 #As there seems to be a progressive convergence to 100% for some points theoretically located in ostentatious exclusive zones when matrices get bigger, we first need to check utilities when more than 99% of the budget is spent on a given good and compare them with the utility of allocating the whole budget on the good
-
 
 #Current utility levels (before double checking those pixels) are stored in the M matrix.
 #We would like to compare those levels to utility levels that would be achieved in the theoretical case of exclusive consumptions (absence of consumption for BD) for all coefficients equal to one in the dummy matrix.
@@ -275,7 +271,6 @@ dummy_GDcheck <- create_dummy_matrix(checkexclusivesGD)
 dummy_BOcheck <- create_dummy_matrix(checkexclusivesBO)
 dummy_BDcheck <- create_dummy_matrix(checkzerosBD)
 #For each good, we now have all the pixels where we need to compare utilities outside the grid search.
-
 
 
 # Initialize matrices to track which utility value is maximized
@@ -451,6 +446,7 @@ for (i in 1:nrow(shareGO)) {
 #We now have the 'consolidated' budget share matrices after checking all points in the exclusive zones are really optimized.
 #Let's plot the number of goods consumed per pixel 
 
+
 #Computing the size of global solutions = Compute the sum of DD{1}, DD{2}, DD{3}, and DD{4} in order to get the number of goods consumed in each point
 S <- DD[[1]] + DD[[2]] + DD[[3]] + DD[[4]]
 
@@ -469,9 +465,7 @@ heatmap(S, scale = "none", Rowv = NA, Colv = NA,
 legend("right", legend = c("1", "2", "3"), fill = c("red", "yellow", "blue"))
 
 
-
-#Alternative method (better graphs?)
-
+#Alternative method to create better graphs
 
 # Computing the size of global solutions = Compute the sum of DD{1}, DD{2}, DD{3}, and DD{4} in order to get the number of goods consumed in each point
 S <- DD[[1]] + DD[[2]] + DD[[3]] + DD[[4]]
@@ -630,6 +624,8 @@ plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
 print(plot)
 
 
+
+
 #### The environmental part #####
 
 #From quantities consumed of each good, we can infer the environmental impacts induced by each good (assuming first implicitly a uniform repartition of the population)
@@ -641,8 +637,7 @@ P3 <- matrix(0, nrow = size, ncol = size)
 P4 <- matrix(0, nrow = size, ncol = size)
 
 #Create for each good matrices of environmental impacts per pixel
-#We multiply by 100 marginal damage to normalize the damage coefficient to one in the low damage case and keep impacts/consumer comparable to previous results, instead of having tiny impact values.
-
+#We multiply by 100 marginal damage to normalize the damage coefficient to one in the low damage case, instead of having tiny impact values.
 
 for (i in 1:nrow(P1)) {
   for (j in 1:ncol(P1)) {
@@ -656,16 +651,12 @@ for (i in 1:nrow(P1)) {
 #Compute the total impact per pixel/consumer (to be compared between cases and then plotted)
 P <- P1+P2+P3+P4
 
-
 #And the contribution of each lifestyle to total pollution
 impact_GO = sum(P1)
 impact_GD = sum(P2)
 impact_BO = sum(P3)
 impact_BD = sum(P4)
 total_impacts = (impact_GO+impact_GD+impact_BO+impact_BD)
-
-
-
 
 
 
@@ -714,7 +705,6 @@ totalimpacts_percapita = total_impacts/(size^2)
 #totalimpacts_percapita_taxlowdamage_unif <- totalimpacts_percapita
 #totalimpacts_percapita_taxhighdamage_unif <- totalimpacts_percapita
 
-
 #totalimpacts_percapita_bdmoreimpacts <- totalimpacts_percapita
 #totalimpacts_percapita_bdmoreimpacts_highdamage <- totalimpacts_percapita
 #totalimpacts_percapita_bdmoreimpacts_tax_highdamage <- totalimpacts_percapita
@@ -728,30 +718,6 @@ case1 <- totalimpacts_percapita_refhighdamage_unif
 case2 <- totalimpacts_percapita_bdmoreimpacts_highdamage 
   
 intercase_var = ((case2-case1)/case1)*100
-
-
-
-
-
-
-
-#Previous cases to be discarded later
-
-#totalimpacts_percapita_poor_unif <- totalimpacts_percapita
-#totalimpacts_percapita_damage_unif <- totalimpacts_percapita
-#totalimpacts_percapita_tax_unif <- totalimpacts_percapita
-#totalimpacts_percapita_BOdirty_unif <- totalimpacts_percapita
-
-#totalimpacts_percapita_ref_unif <- totalimpacts_percapita 
-#totalimpacts_percapita_ref_case2 <- totalimpacts_percapita
-#totalimpacts_percapita_ref_case3 <- totalimpacts_percapita
-#totalimpacts_percapita_ref_case4 <- totalimpacts_percapita
-#totalimpacts_percapita_ref_case5 <- totalimpacts_percapita
-
-
-
-
-
 
 
 # Pollution/Environmental impacts per consumer type 
@@ -808,46 +774,45 @@ legend("right", inset = c(-0.1, 0), legend = round(legend_labels, 2), fill = leg
 
 #Until here we have assumed the population to be uniformly distributed in the square.
 #We now use Beta distributions to model various population concentration scenarios.
-
 #New scenarios for a more in depth comparison. We divide the plane into 9 squares of population concentration that we successively study 
 
 #Careful: only select one at a time !
 
 
 #Square A (North-West) : high social image, low environment  
-a=c=4
-b=d=2
+a=c=5
+b=d=1
 
 #Square B (Center-North) : high social image, average environment
-a=b=c=4
-d=2
+a=b=c=5
+d=1
 
 #Square C (North-East) : high social image, high environment
-a=d=2
-b=c=4
+a=d=1
+b=c=5
 
 #Square D (Center-West) : average social image, low environment
-a=c=d=4
-b=2
+a=c=d=5
+b=1
 
 #Square E (Center) : average social image, average environment
-a=b=c=d=2
+a=b=c=d=5
 
 #Square F (Center-East) : average social image, high environment
-b=c=d=4
-a=2
+b=c=d=5
+a=1
 
 #Square G (South-West) : low social image, low environment
-a=d=4
-b=c=2
+a=d=5
+b=c=1
 
 #Square H (Center-South) : low social image, average environment
-c=2
-a=b=d=4
+c=1
+a=b=d=5
 
 #Square I (South-East) : low social image, high environment
-a=c=2
-b=d=4
+a=c=1
+b=d=5
 
 
 
@@ -951,13 +916,10 @@ pop <- pop[nrow(pop):1, ]
 
 
 
-
-
 ## Application of these population scenarios to compute environmental impacts
 
 
 #We first define the population of consumers of each lifestyle depending on the scenario
-
 
 # Step 1 : Define a function to create a dummy matrix corresponding to consumers (or not) of the lifestyle
 dummy_GO <- create_dummy_matrix(D1)
@@ -1036,7 +998,6 @@ total_impacts_nonunif = impact_GO_nonunif+impact_GD_nonunif+impact_BO_nonunif+im
 
 
 
-
 #Plot the relative contribution of each lifestyle to pollution
 
 contrib_GO_nonunif = (impact_GO_nonunif/total_impacts_nonunif)*100
@@ -1069,6 +1030,7 @@ print(plot)
 
 #And finally per capita impacts, that we compare to the uniform scenario
 #Next lines to be changed depending on cases !
+
 totalimpacts_percapita_taxhighdamage_nonunif = total_impacts_nonunif/(size^2)
 totalimpacts_percapita_taxhighdamage_unif = totalimpacts_percapita  
 variation_with_unif = ((totalimpacts_percapita_taxhighdamage_nonunif- totalimpacts_percapita_taxhighdamage_unif)/totalimpacts_percapita_taxhighdamage_unif)*100
@@ -1226,76 +1188,6 @@ variation_with_unif = ((totalimpacts_percapita_taxhighdamage_nonunif- totalimpac
 #totalimpacts_percapita_squareG_reflowdamage <- totalimpacts_percapita_reflowdamage_nonunif
 #totalimpacts_percapita_squareH_reflowdamage <- totalimpacts_percapita_reflowdamage_nonunif
 #totalimpacts_percapita_squareI_reflowdamage <- totalimpacts_percapita_reflowdamage_nonunif
-
-
-
-#Previous values (to be discarded later)
-
-#totalimpacts_percapita_squareA_BOdirty <- totalimpacts_percapita_BOdirty_nonunif
-#totalimpacts_percapita_squareB_BOdirty <- totalimpacts_percapita_BOdirty_nonunif
-#totalimpacts_percapita_squareC_BOdirty <- totalimpacts_percapita_BOdirty_nonunif
-#totalimpacts_percapita_squareD_BOdirty <- totalimpacts_percapita_BOdirty_nonunif
-#totalimpacts_percapita_squareE_BOdirty <- totalimpacts_percapita_BOdirty_nonunif
-#totalimpacts_percapita_squareF_BOdirty <- totalimpacts_percapita_BOdirty_nonunif
-#totalimpacts_percapita_squareG_BOdirty <- totalimpacts_percapita_BOdirty_nonunif
-#totalimpacts_percapita_squareH_BOdirty <- totalimpacts_percapita_BOdirty_nonunif
-#totalimpacts_percapita_squareI_BOdirty <- totalimpacts_percapita_BOdirty_nonunif
-
-
-#totalimpacts_percapita_squareA_damage <- totalimpacts_percapita_damage_nonunif
-#totalimpacts_percapita_squareB_damage <- totalimpacts_percapita_damage_nonunif
-#totalimpacts_percapita_squareC_damage <- totalimpacts_percapita_damage_nonunif
-#totalimpacts_percapita_squareD_damage <- totalimpacts_percapita_damage_nonunif
-#totalimpacts_percapita_squareE_damage <- totalimpacts_percapita_damage_nonunif
-#totalimpacts_percapita_squareF_damage <- totalimpacts_percapita_damage_nonunif
-#totalimpacts_percapita_squareG_damage <- totalimpacts_percapita_damage_nonunif
-#totalimpacts_percapita_squareH_damage <- totalimpacts_percapita_damage_nonunif
-#totalimpacts_percapita_squareI_damage <- totalimpacts_percapita_damage_nonunif
-
-
-#totalimpacts_percapita_squareA_tax <- totalimpacts_percapita_tax_nonunif
-#totalimpacts_percapita_squareB_tax <- totalimpacts_percapita_tax_nonunif
-#totalimpacts_percapita_squareC_tax <- totalimpacts_percapita_tax_nonunif
-#totalimpacts_percapita_squareD_tax <- totalimpacts_percapita_tax_nonunif
-#totalimpacts_percapita_squareE_tax <- totalimpacts_percapita_tax_nonunif
-#totalimpacts_percapita_squareF_tax <- totalimpacts_percapita_tax_nonunif
-#totalimpacts_percapita_squareG_tax <- totalimpacts_percapita_tax_nonunif
-#totalimpacts_percapita_squareH_tax <- totalimpacts_percapita_tax_nonunif
-#totalimpacts_percapita_squareI_tax <- totalimpacts_percapita_tax_nonunif
-
-
-#totalimpacts_percapita_squareA_poor <- totalimpacts_percapita_poor_nonunif
-#totalimpacts_percapita_squareB_poor <- totalimpacts_percapita_poor_nonunif
-#totalimpacts_percapita_squareC_poor <- totalimpacts_percapita_poor_nonunif
-#totalimpacts_percapita_squareD_poor <- totalimpacts_percapita_poor_nonunif
-#totalimpacts_percapita_squareE_poor <- totalimpacts_percapita_poor_nonunif
-#totalimpacts_percapita_squareF_poor <- totalimpacts_percapita_poor_nonunif
-#totalimpacts_percapita_squareG_poor <- totalimpacts_percapita_poor_nonunif
-#totalimpacts_percapita_squareH_poor <- totalimpacts_percapita_poor_nonunif
-#totalimpacts_percapita_squareI_poor <- totalimpacts_percapita_poor_nonunif
-
-#totalimpacts_percapita_squareA <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_squareB <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_squareC <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_squareD <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_squareE <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_squareF <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_squareG <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_squareH <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_squareI <- totalimpacts_percapita_ref_nonunif
-
-#totalimpacts_percapita_2A_ref <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_2B_ref <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_2C_ref <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_2D_ref <- totalimpacts_percapita_ref_nonunif
-#totalimpacts_percapita_2E_ref <- totalimpacts_percapita_ref_nonunif
-
-
-
-
-
-
-
 
 
 
@@ -1604,10 +1496,6 @@ print(plot_pcimpact_taxhighd_sens2)
 
 
 
-
-
-
-
 #Lower income and low damage.
 
 categories <- c("Uniform", "A", "B","C","D","E","F","G","H","I")
@@ -1737,9 +1625,6 @@ print(plot_pcimpact_lowinchighdam)
 
 
 
-
-
-
 #Pigovian tax with low damage.
 
 categories <- c("Uniform", "A", "B","C","D","E","F","G","H","I")
@@ -1792,9 +1677,6 @@ plot_pcimpact_taxlowdam <- ggplot(data, aes(x = Category, y = Numbers, fill = Nu
 
 # Display the plot
 print(plot_pcimpact_taxlowdam)
-
-
-
 
 
 
@@ -1862,8 +1744,7 @@ print(plot_pcimpact_taxhighdam)
 
 
 
-#Sensitivity analysis : BD more impact-intensive than BO
-
+##Sensitivity analysis : BD more impact-intensive than BO######
 
 
 #Ref prices,low damage
@@ -2420,9 +2301,7 @@ tax_var = ((taxcase-ref)/ref)*100
 
 
 
-#####
-
-
+##### Figures by square #####
 
 #Square A
 
