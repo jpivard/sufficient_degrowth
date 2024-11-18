@@ -24,6 +24,8 @@ rm(list=ls())
 
 #install.packages("fields")
 
+#install.packages("patchwork")
+
 
 # Load necessary libraries
 
@@ -53,18 +55,18 @@ library(fields)
 R = 16
 p_go = 3
 p_gd = 2
-p_bo = 2
+p_bo = 1.9
 p_bd = 1
 p <- c(p_go,p_gd,p_bo,p_bd)
 
-d_prime = 0.01
-gammaGO <- 1
-gammaGD <- 0.8
-gammaBD <- 2.5
-gammaBO <- 4.5
+d_prime <- 0.03
+gammaGO <- 1.5
+gammaGD <- 0.5
+gammaBD <- 2
+gammaBO <- 5
 gamma <- c(gammaGO, gammaGD, gammaBO, gammaBD)
 
-theta = 1000
+theta <- 1000
 
 ##### The size of the matrices (i.e. the accuracy of the computation) must also be chosen here.
 step = 0.025
@@ -465,6 +467,7 @@ heatmap(S, scale = "none", Rowv = NA, Colv = NA,
 legend("right", legend = c("1", "2", "3"), fill = c("red", "yellow", "blue"))
 
 
+
 #Alternative method to create better graphs
 
 # Computing the size of global solutions = Compute the sum of DD{1}, DD{2}, DD{3}, and DD{4} in order to get the number of goods consumed in each point
@@ -500,7 +503,7 @@ par(mar = c(5, 5, 4, 8))
 # Create the image plot
 image(1:ncol(S), 1:nrow(S), t(S), col = color_palette, axes = FALSE, 
       xlab = "Alpha", ylab = "Beta",
-      main = "Pigovian tax / low damage")
+      main = "Baseline / low damage")
 
 # Add axis labels
 axis(1, at = 1:ncol(S), labels = colnames(S), las = 2, cex.axis = 0.7)
@@ -532,7 +535,7 @@ generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_
     
     # Plot the heatmap with the reversed matrix using image
     image(1:ncol(share_reversed), 1:nrow(share_reversed), t(share_reversed), col = color_palette, axes = FALSE, 
-          main = paste("% of income spent in", lifestyle, "- Discrete lifestyles more impacts-intensive /higher damage"), 
+          main = paste("% of income spent in", lifestyle, "- Low damage baseline"), 
           xlab = "alpha", ylab = "beta", xlim = c(1, max_dim), ylim = c(1, max_dim), asp = 1)
     
     # Add axis labels
@@ -614,7 +617,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Market shares - Discrete lifestyles more impacts-intensive than ostentatious ones/Tax with higher damage, Uniform",
+  labs(title = "Market shares - Discrete lifestyles more impacts-intensive than ostentatious ones/Tax, high damage, Uniform",
        x = "Lifestyles",
        y = "Percentage of quantities consumed") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -816,6 +819,84 @@ b=d=5
 
 
 
+## Alternative scenarios (for sensitivity analysis): 
+
+#1. Smaller concentration zones
+
+#Square A2 : very high social image, very low environment
+a=c=8
+b=d=1
+
+#Square B2 (Center-North) : very high social image, average environment
+a=b=c=8
+d=1
+
+#Square C2 (North-East) : very high social image, very high environment
+a=d=1
+b=c=8
+
+#Square D2 (Center-West) : average social image, very low environment
+a=c=d=8
+b=1
+
+#Square E2 (Center) : average social image, average environment - more concentrated
+a=b=c=d=8
+
+#Square F2 (Center-East) : average social image, very high environment
+b=c=d=8
+a=1
+
+#Square G2 (South-West) : very low social image, very low environment
+a=d=8
+b=c=1
+
+#Square H2 (Center-South) : very low social image, average environment
+c=1
+a=b=d=8
+
+#Square I2 (South-East) : very low social image, very high environment
+a=c=1
+b=d=8
+
+
+#2. Bigger concentration zones (less 'extreme' societies)
+
+#Square A3 : average/high social image, average/low environment
+a=c=4
+b=d=2
+
+#Square B3 (Center-North) 
+a=b=c=4
+d=2
+
+#Square C3 (North-East) 
+a=d=2
+b=c=4
+
+#Square D3 (Center-West) 
+a=c=d=4
+b=2
+
+#Square E3 (Center) : average social image, average environment - more dispersed
+a=b=c=d=2
+
+#Square F3 (Center-East) 
+b=c=d=4
+a=2
+
+#Square G3 (South-West) 
+a=d=4
+b=c=2
+
+#Square H3 (Center-South) 
+c=2
+a=b=d=4
+
+#Square I3 (South-East) 
+a=c=2
+b=d=4
+
+
 
 
 #initialize with an empty matrix
@@ -886,6 +967,7 @@ sum(pop)
 
 
 
+
 ###Plot the population concentration in a heatmap for each scenario :
 
 # Define the matrix P with rownames and colnames
@@ -902,7 +984,7 @@ color_palette <- colorRampPalette(c("lightblue", "blue", "darkblue"))(num_colors
 # Create the heatmap
 heatmap(pop, scale = "none", Rowv = NA, Colv = NA,
         col = color_palette,
-        main = "Density of population - Scenario E",
+        main = "Density of population - Scenario H",
         cexRow = 0.7, cexCol = 0.7,
         ylab = "beta")
 
@@ -912,6 +994,9 @@ mtext("alpha", side = 1, line = 3, las = 1)  # Adjust 'line' parameter to positi
 
 #Put back the rows in the other direction for market shares computation
 pop <- pop[nrow(pop):1, ]
+
+
+
 
 
 
@@ -969,7 +1054,7 @@ custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen")
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
   geom_bar(stat = "identity") +
-  labs(title = "Market shares - Pigovian tax with higher damage, avg. soc. image and env. concerns, scen. E3",
+  labs(title = "Market shares - Pigovian tax with higher damage, average/high soc. image concerns, low/average env. concerns, scen. A3",
        x = "Lifestyles",
        y = "Percentage of quantities consumed") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
@@ -1031,7 +1116,7 @@ print(plot)
 #And finally per capita impacts, that we compare to the uniform scenario
 #Next lines to be changed depending on cases !
 
-totalimpacts_percapita_taxhighdamage_nonunif = total_impacts_nonunif/(size^2)
+totalimpacts_percapita_refhighdamage_nonunif = total_impacts_nonunif/(size^2)
 totalimpacts_percapita_taxhighdamage_unif = totalimpacts_percapita  
 variation_with_unif = ((totalimpacts_percapita_taxhighdamage_nonunif- totalimpacts_percapita_taxhighdamage_unif)/totalimpacts_percapita_taxhighdamage_unif)*100
 
@@ -1744,7 +1829,7 @@ print(plot_pcimpact_taxhighdam)
 
 
 
-##Sensitivity analysis : BD more impact-intensive than BO######
+##Sensitivity analysis on relative impact-intensities######
 
 
 #Ref prices,low damage
@@ -1898,7 +1983,7 @@ print(plot_pcimpact_BDmorepolltaxhighd)
 
 
 
-#Now both discrete lifestyles are more impact-intensive
+##Now both discrete lifestyles are more impact-intensive
 
 
 #Ref prices,high damage 
@@ -2023,11 +2108,20 @@ print(plot_pcimpact_discrmorepolltaxhighd)
 
 
 
+
+
+
+
+
+
+
+
 #Let's now compare cases across scenarios, zooming on different population concentration zones
 
 
-#Uniform distribution
+#Uniform distrib
 
+# Categories and per capita impacts
 categories <- c("Ref/Low damage", "Ref/Tripled damage", "25% less income/Low damage", "25% less income/Tripled damage", "Pigovian tax/Low damage", "Pigovian tax/Tripled damage")
 per_capita_impacts <- c(
   totalimpacts_percapita_reflowdamage_unif,
@@ -2035,22 +2129,26 @@ per_capita_impacts <- c(
   totalimpacts_percapita_lowerincomelowdamage_unif,
   totalimpacts_percapita_lowincomehighdamage_unif,
   totalimpacts_percapita_taxlowdamage_unif,
-  totalimpacts_percapita_taxhighdamage_unif)
+  totalimpacts_percapita_taxhighdamage_unif
+)
 
 # Create a data frame
-data <- data.frame(Category = factor(categories, levels = c("Ref/Low damage", "Ref/Tripled damage", "25% less income/Low damage", "25% less income/Tripled damage", "Pigovian tax/Low damage", "Pigovian tax/Tripled damage")), Numbers = per_capita_impacts)
+data <- data.frame(Category = factor(categories, levels = c("Ref/Low damage", "Ref/Tripled damage", "25% less income/Low damage", "25% less income/Tripled damage", "Pigovian tax/Low damage", "Pigovian tax/Tripled damage")), 
+                   Numbers = per_capita_impacts)
 
-# Reorder the levels of Category based on Numbers
-data$Category <- factor(data$Category, levels = data$Category[order(data$Numbers)])
+# Reorder the levels of Category based on Numbers in descending order
+data$Category <- factor(data$Category, levels = data$Category[order(-data$Numbers)])
 
 # Set custom colors for the gradient fill
 custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
 
-# Create the bar plot using ggplot2
+# Create the bar plot with ggplot2 and include demarcation
+library(ggplot2)
+
 plot_pcimpact_unif <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
   geom_bar(stat = "identity") +
   labs(
-    title = "Per capita impacts by case/state of the world, Uniform distribution",
+    title = "Per capita impacts by case in two states of the world (high or low damage), Uniform distribution of preferences",
     x = "Cases",
     y = "Impacts"
   ) +
@@ -2060,10 +2158,17 @@ plot_pcimpact_unif <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers
     guide = "legend",
     name = "Impacts"
   ) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # For better readability
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1), # For better readability
+    plot.margin = unit(c(1, 1, 2.5, 1), "cm") # Extend the bottom margin for annotations
+  ) +
+  geom_vline(xintercept = 3.5, linetype = "dashed", color = "black", size = 1) + # Adds a dashed line for demarcation
+  annotate("text", x = 1.75, y = -0.1 * max(data$Numbers), label = "High damage world", size = 4, hjust = 0.5) + # Text for the left side
+  annotate("text", x = 5.25, y = -0.1 * max(data$Numbers), label = "Low damage world", size = 4, hjust = 0.5)   # Text for the right side
 
 # Display the plot
 print(plot_pcimpact_unif)
+
 
 
 
@@ -2105,9 +2210,35 @@ print(plot_pcimpact_highdam_unif)
 
 
 
+
+
+
+
+
 #Compare effect of the tax across scenarios.
 
-categories <- c("Baseline", "Pigovian tax", "Baseline/A","Pigovian tax/A", "Baseline/G","Pigovian tax/G", "Baseline/E", "Pigovian tax/E", "Baseline/H","Pigovian tax/H", "Baseline/I","Pigovian tax/I", "Baseline/F", "Pigovian tax/F")
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(patchwork)
+library(png)
+
+# Define custom labels with Greek symbols
+custom_labels2 <- c(
+  "Uniform",
+  expression("("*alpha[l]*", "*beta[h]*")"),
+  expression("("*alpha[l]*", "*beta[l]*")"),
+  expression("("*alpha[m]*", "*beta[m]*")"),
+  expression("("*alpha[m]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[m]*")")
+)
+
+# Define categories and impacts
+categories <- rep(c("Baseline", "Pigovian tax"), 7)  # 14 categories, 7 pairs
+group_labels <- rep(1:7, each = 2)  # Group pairs to apply custom labels
+
+# Define impact values for each bar (Baseline and Pigovian tax for each pair)
 per_capita_impacts <- c(
   totalimpacts_percapita_refhighdamage_unif,
   totalimpacts_percapita_taxhighdamage_unif,
@@ -2125,21 +2256,22 @@ per_capita_impacts <- c(
   totalimpacts_percapita_squareF_taxhighdamage
 )
 
-# Create a data frame
-data <- data.frame(Category = factor(categories, levels = c("Baseline", "Pigovian tax", "Baseline/A","Pigovian tax/A",  "Baseline/G","Pigovian tax/G", "Baseline/E", "Pigovian tax/E", "Baseline/H","Pigovian tax/H", "Baseline/I","Pigovian tax/I", "Baseline/F", "Pigovian tax/F")), Numbers = per_capita_impacts)
+# Create data frame with categories, impacts, and custom labels for pairs
+data <- data.frame(
+  Category = categories,
+  Numbers = per_capita_impacts,
+  Group = factor(rep(1:7, each = 2), labels = custom_labels2)  # Custom labels for each pair
+)
 
 # Set custom colors for the gradient fill
 custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
 
-# Add a grouping factor for pairs
-data$Group <- rep(1:(length(categories)/2), each = 2)
-
-# Create the bar plot using ggplot2
-plot_pcimpact_taxcomparison <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
-  geom_bar(stat = "identity", position = "dodge") +
+# Create bar plot with 14 bars (7 pairs)
+bar_plot <- ggplot(data, aes(x = Group, y = Numbers, fill = Numbers, group = Category)) +
+  geom_bar(aes(fill = Numbers), stat = "identity", position = position_dodge(width = 0.8)) +
   labs(
-    title = "Comparison of tax effects on impacts (higher damage world) according to population (concentration) scenarios",
-    x = "Case/Population concentration scenario",
+    title = "Comparison of tax effects on impacts (higher damage world) according to population concentration scenarios",
+    x = "Case - Baseline (left) vs. Pigovian tax (right)",
     y = "Per capita impacts"
   ) +
   theme_minimal() +
@@ -2147,14 +2279,49 @@ plot_pcimpact_taxcomparison <- ggplot(data, aes(x = Category, y = Numbers, fill 
     colors = custom_gradient_colors,
     guide = "legend",
     name = "Impacts"
-  )+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  facet_wrap(~ Group, nrow = 1, scales = "free_x", labeller = as_labeller(c(`1` = "Uniform", `2` = "Low env x High image", '3' = "Low env x Low image", '4' = "Avg. env x Avg. image", '5'="Avg. env x Low image",'6'="High env x Low image", '7' = "High env x Avg. image")))
+  ) +
+  scale_x_discrete(labels = custom_labels2) +  # Apply custom labels to each pair
+  theme(
+    axis.text.x = element_text(hjust = 1),
+    panel.grid.major.x = element_blank()
+  )
+
+# Load and create heatmap plots for specific scenarios (only the last 6 pairs)
+heatmap_files <- c("heatmap scen A.png", "heatmap scen G.png", "heatmap scen E.png",
+                   "heatmap scen H.png", "heatmap scen I.png", "heatmap scen F.png")
+heatmap_plots <- list()
+
+# Generate ggplot objects for heatmaps
+for (i in 1:length(heatmap_files)) {
+  heatmap_image <- readPNG(heatmap_files[i])
+  heatmap_grob <- rasterGrob(as.raster(heatmap_image), interpolate = TRUE)
+  
+  # Create a ggplot for the heatmap
+  heatmap_plot <- ggplot() + 
+    annotation_custom(heatmap_grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) + 
+    theme_void()
+  
+  heatmap_plots[[i]] <- heatmap_plot
+}
+
+# Insert a blank plot for the first pair and arrange the heatmaps under the last 6 pairs
+heatmap_grid <- wrap_plots(plot_spacer(), heatmap_plots[[1]], heatmap_plots[[2]], heatmap_plots[[3]],
+                           heatmap_plots[[4]], heatmap_plots[[5]], heatmap_plots[[6]], ncol = 7)
+
+# Combine bar plot and heatmap grid with custom heights
+final_plot <- bar_plot / heatmap_grid + plot_layout(heights = c(1, 0.25))
+
+# Display the final plot
+print(final_plot)
 
 
 
-# Display the plot
-print(plot_pcimpact_taxcomparison)
+
+
+
+
+
+
 
 
 #Compute impact variations with tax between scenarios
@@ -2163,9 +2330,6 @@ ref <-  totalimpacts_percapita_squareH_refhighdamage
 taxcase <- totalimpacts_percapita_squareH_taxhighdamage
 
 tax_var = ((taxcase-ref)/ref)*100
-
-
-
 
 
 
@@ -2509,6 +2673,114 @@ plot_pcimpact_squareC <- ggplot(data, aes(x = Category, y = Numbers, fill = Numb
 
 # Display the plot
 print(plot_pcimpact_squareC)
+
+
+
+
+
+
+
+
+#Figure combining the plots and the legend heatmaps
+
+library(ggplot2)
+library(cowplot)
+library(grid)
+library(png)
+library(patchwork)
+
+
+
+
+# Data for bar plot
+categories <- c("A", "B","C","D","E","F","G","H","I")
+per_capita_impacts <- c(
+  totalimpacts_percapita_squareA_reflowdamage,
+  totalimpacts_percapita_squareB_reflowdamage,
+  totalimpacts_percapita_squareC_reflowdamage,
+  totalimpacts_percapita_squareD_reflowdamage,
+  totalimpacts_percapita_squareE_reflowdamage,
+  totalimpacts_percapita_squareF_reflowdamage,
+  totalimpacts_percapita_squareG_reflowdamage,
+  totalimpacts_percapita_squareH_reflowdamage,
+  totalimpacts_percapita_squareI_reflowdamage
+)
+
+# Create a data frame and order it by Numbers
+data <- data.frame(
+  Category = factor(categories, levels = categories),
+  Numbers = per_capita_impacts
+)
+data <- data[order(data$Numbers, decreasing = TRUE), ]  # Order by impacts
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Create a custom legend for each bar with Greek symbols
+custom_labels <- c(
+  expression("("*alpha[l]*", "*beta[m]*")"),
+  expression("("*alpha[l]*", "*beta[h]*")"),
+  expression("("*alpha[l]*", "*beta[l]*")"),
+  expression("("*alpha[m]*", "*beta[m]*")"),
+  expression("("*alpha[m]*", "*beta[h]*")"),
+  expression("("*alpha[m]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[m]*")"),
+  expression("("*alpha[h]*", "*beta[h]*")"),
+  expression("("*alpha[h]*", "*beta[l]*")")
+)
+
+# Create the bar plot with a custom legend
+library(ggplot2)
+bar_plot <- ggplot(data, aes(x = reorder(Category, -Numbers), y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  scale_fill_gradientn(colors = custom_gradient_colors) +  # Gradient fill applied here
+  labs(
+    title = "Per capita impacts in different population scenarios - Low damage baseline",
+    x = "Population concentration scenario (environmental axis, image axis) - l:low, m:medium, h:high",
+    y = "Per capita impacts"
+  ) +
+  scale_x_discrete(labels = custom_labels) +  # Use custom labels for the x-axis
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 15)  # Adjust text size and angle for better readability
+  )
+
+
+# Display the bar plot
+print(bar_plot)
+
+
+# Load heatmap images 
+heatmap_files <- c("heatmap scen D.png", "heatmap scen A.png", "heatmap scen G.png",
+                   "heatmap scen E.png", "heatmap scen B.png", "heatmap scen H.png",
+                   "heatmap scen F.png", "heatmap scen C.png", "heatmap scen I.png")
+
+# Create heatmap plots for each scenario
+for (i in 1:length(heatmap_files)) {
+  heatmap_image <- readPNG(heatmap_files[i])  # Read the heatmap image
+  heatmap_grob <- rasterGrob(as.raster(heatmap_image), interpolate = TRUE)  # Create a rasterGrob
+  
+  # Create a ggplot for the heatmap
+  heatmap_plot <- ggplot() + 
+    annotation_custom(heatmap_grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) + 
+    theme_void()  # No axes or grid lines
+  
+  # Store the heatmap plot in the list
+  heatmap_plots[[i]] <- heatmap_plot
+}
+
+# Combine bar plot and heatmap plots using patchwork
+# Create a plot grid with reduced spacing
+heatmap_grid <- wrap_plots(heatmap_plots, ncol = length(heatmap_plots))
+
+# Combine bar plot and heatmap grid with less spacing
+final_plot <- bar_plot / heatmap_grid + plot_layout(heights = c(1, 0.5))  # Adjust heights as needed
+
+# Display the combined plot
+print(final_plot)
+
+
+
 
 
 
