@@ -982,14 +982,23 @@ num_colors <- 100  # Use 100 colors for a smooth gradient
 color_palette <- colorRampPalette(c("lightblue", "blue", "darkblue"))(num_colors)
 
 # Create the heatmap
-heatmap(pop, scale = "none", Rowv = NA, Colv = NA,
-        col = color_palette,
-        main = "Density of population - Scenario H",
-        cexRow = 0.7, cexCol = 0.7,
-        ylab = "beta")
+
+# Plot the heatmap without a title
+heatmap(
+  pop, 
+  scale = "none", 
+  Rowv = NA, 
+  Colv = NA,
+  col = color_palette,
+  main = expression("Density of population - Scenario " * (alpha[l] * "," * beta[h])["3"] * ""),
+  cexRow = 0.7, 
+  cexCol = 0.7,
+  ylab = expression(beta)
+)
+
 
 # Add the x-axis label after creating the heatmap
-mtext("alpha", side = 1, line = 3, las = 1)  # Adjust 'line' parameter to position the label properly
+mtext(expression(alpha), side = 1, line = 3, las = 1)  # Adjust 'line' parameter to position the label properly
 
 
 #Put back the rows in the other direction for market shares computation
@@ -2783,4 +2792,496 @@ print(final_plot)
 
 
 
+#Same figure with higher damage 
+
+library(ggplot2)
+library(ggtext)
+
+# Data for bar plot
+categories <- c("Uniform", "A", "B", "C", "D", "E", "F", "G", "H", "I")
+per_capita_impacts <- c(
+  totalimpacts_percapita_refhighdamage_unif,
+  totalimpacts_percapita_squareA_refhighdamage,
+  totalimpacts_percapita_squareB_refhighdamage,
+  totalimpacts_percapita_squareC_refhighdamage,
+  totalimpacts_percapita_squareD_refhighdamage,
+  totalimpacts_percapita_squareE_refhighdamage,
+  totalimpacts_percapita_squareF_refhighdamage,
+  totalimpacts_percapita_squareG_refhighdamage,
+  totalimpacts_percapita_squareH_refhighdamage,
+  totalimpacts_percapita_squareI_refhighdamage
+)
+
+# Create a data frame
+data <- data.frame(
+  Category = factor(categories, levels = categories),
+  Numbers = per_capita_impacts
+)
+
+# Reorder the Category factor based on descending Numbers
+data <- data[order(data$Numbers, decreasing = TRUE), ]
+data$Category <- factor(data$Category, levels = data$Category)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Define custom labels with Greek letters (order to be changed manually for each case)
+custom_labels <- c(
+  expression("("*alpha[l]*", "*beta[m]*")"),
+  expression("("*alpha[l]*", "*beta[h]*")"),
+  expression("("*alpha[l]*", "*beta[l]*")"),
+  expression("Uniform"),
+  expression("("*alpha[m]*", "*beta[h]*")"),
+  expression("("*alpha[m]*", "*beta[m]*")"),
+  expression("("*alpha[m]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[h]*")"),
+  expression("("*alpha[h]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[m]*")")
+)
+
+# Create the bar plot using ggplot2
+plot_pcimpact_refhighd <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(
+    title = "Per capita impacts in the different population scenarios (by descending order), Ref case/Damage tripled",
+    x = "Population concentration scenario (environmental axis, image axis)",
+    y = "Per capita impacts"
+  ) +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  ) +
+  scale_x_discrete(labels = custom_labels) +  # Use custom Greek labels for x-axis
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.75)
+  )
+
+# Display the plot
+print(plot_pcimpact_refhighd)
+
+
+
+
+
+#With lower income
+
+# Data for bar plot
+categories <- c("Uniform", "A", "B", "C", "D", "E", "F", "G", "H", "I")
+per_capita_impacts <- c(
+  totalimpacts_percapita_lowincomehighdamage_unif,
+  totalimpacts_percapita_squareA_lowincomehighdamage,
+  totalimpacts_percapita_squareB_lowincomehighdamage,
+  totalimpacts_percapita_squareC_lowincomehighdamage,
+  totalimpacts_percapita_squareD_lowincomehighdamage,
+  totalimpacts_percapita_squareE_lowincomehighdamage,
+  totalimpacts_percapita_squareF_lowincomehighdamage,
+  totalimpacts_percapita_squareG_lowincomehighdamage,
+  totalimpacts_percapita_squareH_lowincomehighdamage,
+  totalimpacts_percapita_squareI_lowincomehighdamage
+)
+
+# Create a data frame
+data <- data.frame(
+  Category = factor(categories, levels = categories),
+  Numbers = per_capita_impacts
+)
+
+# Reorder the Category factor based on descending Numbers
+data <- data[order(data$Numbers, decreasing = TRUE), ]
+data$Category <- factor(data$Category, levels = data$Category)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Define custom labels with Greek letters (order to be changed manually for each case)
+custom_labels <- c(
+  expression("("*alpha[l]*", "*beta[m]*")"),
+  expression("("*alpha[l]*", "*beta[h]*")"),
+  expression("Uniform"),
+  expression("("*alpha[l]*", "*beta[l]*")"),
+  expression("("*alpha[m]*", "*beta[m]*")"),
+  expression("("*alpha[m]*", "*beta[h]*")"),
+  expression("("*alpha[m]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[h]*")"),
+  expression("("*alpha[h]*", "*beta[m]*")")
+)
+
+# Create the bar plot using ggplot2
+plot_pcimpact_lowinchighd <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(
+    title = "Per capita impacts in the different population scenarios (by descending order), 25% less income/Damage tripled",
+    x = "Population concentration scenario (environmental axis, image axis)",
+    y = "Per capita impacts"
+  ) +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  ) +
+  scale_x_discrete(labels = custom_labels) +  # Use custom Greek labels for x-axis
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.75)
+  )
+
+# Display the plot
+print(plot_pcimpact_lowinchighd)
+
+
+
+
+
+#Pigovian tax
+
+# Data for bar plot
+categories <- c("Uniform", "A", "B", "C", "D", "E", "F", "G", "H", "I")
+per_capita_impacts <- c(
+  totalimpacts_percapita_taxhighdamage_unif,
+  totalimpacts_percapita_squareA_taxhighdamage,
+  totalimpacts_percapita_squareB_taxhighdamage,
+  totalimpacts_percapita_squareC_taxhighdamage,
+  totalimpacts_percapita_squareD_taxhighdamage,
+  totalimpacts_percapita_squareE_taxhighdamage,
+  totalimpacts_percapita_squareF_taxhighdamage,
+  totalimpacts_percapita_squareG_taxhighdamage,
+  totalimpacts_percapita_squareH_taxhighdamage,
+  totalimpacts_percapita_squareI_taxhighdamage
+)
+
+# Create a data frame
+data <- data.frame(
+  Category = factor(categories, levels = categories),
+  Numbers = per_capita_impacts
+)
+
+# Reorder the Category factor based on descending Numbers
+data <- data[order(data$Numbers, decreasing = TRUE), ]
+data$Category <- factor(data$Category, levels = data$Category)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Define custom labels with Greek letters (order to be changed manually for each case)
+custom_labels <- c(
+  expression("("*alpha[l]*", "*beta[m]*")"),
+  expression("("*alpha[l]*", "*beta[h]*")"),
+  expression("("*alpha[l]*", "*beta[l]*")"),
+  expression("Uniform"),
+  expression("("*alpha[m]*", "*beta[h]*")"),
+  expression("("*alpha[m]*", "*beta[m]*")"),
+  expression("("*alpha[m]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[m]*")"),
+  expression("("*alpha[h]*", "*beta[h]*")")
+)
+
+# Create the bar plot using ggplot2
+plot_pcimpact_taxhighd <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(
+    title = "Per capita impacts in the different population scenarios (by descending order), Pigovian tax/Damage tripled",
+    x = "Population concentration scenario (environmental axis, image axis)",
+    y = "Per capita impacts"
+  ) +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  ) +
+  scale_x_discrete(labels = custom_labels) +  # Use custom Greek labels for x-axis
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.75)
+  )
+
+# Display the plot
+print(plot_pcimpact_taxhighd)
+
+
+
+#High damage, ref prices but discrete lifestyles pollute more
+
+
+# Data for bar plot
+categories <- c("Uniform", "A", "B", "C", "D", "E", "F", "G", "H", "I")
+per_capita_impacts <- c(
+  totalimpacts_percapita_discrmorepollhighdamage_unif,
+  totalimpacts_percapita_squareA_discrmorepollhighdamage,
+  totalimpacts_percapita_squareB_discrmorepollhighdamage,
+  totalimpacts_percapita_squareC_discrmorepollhighdamage,
+  totalimpacts_percapita_squareD_discrmorepollhighdamage,
+  totalimpacts_percapita_squareE_discrmorepollhighdamage,
+  totalimpacts_percapita_squareF_discrmorepollhighdamage,
+  totalimpacts_percapita_squareG_discrmorepollhighdamage,
+  totalimpacts_percapita_squareH_discrmorepollhighdamage,
+  totalimpacts_percapita_squareI_discrmorepollhighdamage
+)
+
+# Create a data frame
+data <- data.frame(
+  Category = factor(categories, levels = categories),
+  Numbers = per_capita_impacts
+)
+
+# Reorder the Category factor based on descending Numbers
+data <- data[order(data$Numbers, decreasing = TRUE), ]
+data$Category <- factor(data$Category, levels = data$Category)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Define custom labels with Greek letters (order to be changed manually for each case)
+custom_labels <- c(
+  expression("("*alpha[l]*", "*beta[m]*")"),
+  expression("("*alpha[l]*", "*beta[h]*")"),
+  expression("("*alpha[l]*", "*beta[l]*")"),
+  expression("Uniform"),
+  expression("("*alpha[m]*", "*beta[m]*")"),
+  expression("("*alpha[m]*", "*beta[h]*")"),
+  expression("("*alpha[m]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[m]*")"),
+  expression("("*alpha[h]*", "*beta[h]*")")
+)
+
+# Create the bar plot using ggplot2
+plot_pcimpact_discrmorepollhighd <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(
+    title = "Per capita impacts in the different population scenarios, Discrete lifestyles more polluting than ostentatious equivalent, high damage",
+    x = "Population concentration scenario (environmental axis, image axis)",
+    y = "Per capita impacts"
+  ) +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  ) +
+  scale_x_discrete(labels = custom_labels) +  # Use custom Greek labels for x-axis
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.75)
+  )
+
+# Display the plot
+print(plot_pcimpact_discrmorepollhighd)
+
+
+
+
+
+
+
+#High damage and Pigovian tax when discrete lifestyles pollute more
+
+
+# Data for bar plot
+categories <- c("Uniform", "A", "B", "C", "D", "E", "F", "G", "H", "I")
+per_capita_impacts <- c(
+  totalimpacts_percapita_discrmorepolltaxhighdamage_unif,
+  totalimpacts_percapita_squareA_discrmorepolltaxhighdamage,
+  totalimpacts_percapita_squareB_discrmorepolltaxhighdamage,
+  totalimpacts_percapita_squareC_discrmorepolltaxhighdamage,
+  totalimpacts_percapita_squareD_discrmorepolltaxhighdamage,
+  totalimpacts_percapita_squareE_discrmorepolltaxhighdamage,
+  totalimpacts_percapita_squareF_discrmorepolltaxhighdamage,
+  totalimpacts_percapita_squareG_discrmorepolltaxhighdamage,
+  totalimpacts_percapita_squareH_discrmorepolltaxhighdamage,
+  totalimpacts_percapita_squareI_discrmorepolltaxhighdamage
+)
+
+# Create a data frame
+data <- data.frame(
+  Category = factor(categories, levels = categories),
+  Numbers = per_capita_impacts
+)
+
+# Reorder the Category factor based on descending Numbers
+data <- data[order(data$Numbers, decreasing = TRUE), ]
+data$Category <- factor(data$Category, levels = data$Category)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Define custom labels with Greek letters (order to be changed manually for each case)
+custom_labels <- c(
+  expression("("*alpha[l]*", "*beta[m]*")"),
+  expression("("*alpha[l]*", "*beta[h]*")"),
+  expression("("*alpha[l]*", "*beta[l]*")"),
+  expression("Uniform"),
+  expression("("*alpha[m]*", "*beta[m]*")"),
+  expression("("*alpha[h]*", "*beta[m]*")"),
+  expression("("*alpha[h]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[h]*")"),
+  expression("("*alpha[m]*", "*beta[l]*")"),
+  expression("("*alpha[m]*", "*beta[h]*")")
+)
+
+# Create the bar plot using ggplot2
+plot_pcimpact_taxdiscrmorepollhighd <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(
+    title = "Per capita impacts in the different population scenarios, Discrete lifestyles more polluting, Pigovian tax, high damage",
+    x = "Population concentration scenario (environmental axis, image axis)",
+    y = "Per capita impacts"
+  ) +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  ) +
+  scale_x_discrete(labels = custom_labels) +  # Use custom Greek labels for x-axis
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.75)
+  )
+
+# Display the plot
+print(plot_pcimpact_taxdiscrmorepollhighd)
+
+
+
+
+#Sensitivity analysis (alternative scenarios), higher damage reference case.
+
+
+#More extreme scenarios
+
+categories <- c("Uniform", "A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2", "I2")
+
+per_capita_impacts <- c(
+  totalimpacts_percapita_refhighdamage_unif,
+  totalimpacts_percapita_squareA2_refhighdamage,
+  totalimpacts_percapita_squareB2_refhighdamage,
+  totalimpacts_percapita_squareC2_refhighdamage,
+  totalimpacts_percapita_squareD2_refhighdamage,
+  totalimpacts_percapita_squareE2_refhighdamage,
+  totalimpacts_percapita_squareF2_refhighdamage,
+  totalimpacts_percapita_squareG2_refhighdamage,
+  totalimpacts_percapita_squareH2_refhighdamage,
+  totalimpacts_percapita_squareI2_refhighdamage
+)
+
+# Create a data frame
+data <- data.frame(
+  Category = factor(categories, levels = categories),
+  Numbers = per_capita_impacts
+)
+
+# Reorder the Category factor based on descending Numbers
+data <- data[order(data$Numbers, decreasing = TRUE), ]
+data$Category <- factor(data$Category, levels = data$Category)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Define custom labels with Greek letters and subscripts for each pair
+custom_labels <- c(
+  expression("("* alpha[l] * "," * beta[m] * ")" * scriptstyle("2")),
+  expression("("* alpha[l] * "," * beta[h] * ")" * scriptstyle("2")),
+  expression("("* alpha[l] * "," * beta[l] * ")" * scriptstyle("2")),
+  expression("Uniform"),
+  expression("("* alpha[m] * "," * beta[h] * ")" * scriptstyle("2")),
+  expression("("* alpha[m] * "," * beta[m] * ")" * scriptstyle("2")),
+  expression("("* alpha[m] * "," * beta[l] * ")" * scriptstyle("2")),
+  expression("("* alpha[h] * "," * beta[l] * ")" * scriptstyle("2")),
+  expression("("* alpha[h] * "," * beta[h] * ")" * scriptstyle("2")),
+  expression("("* alpha[h] * "," * beta[m] * ")" * scriptstyle("2"))
+)
+
+
+# Create the bar plot using ggplot2
+plot_pcimpact_refhighd_sens <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(
+    title = "Per capita impacts with more 'extreme' population scenarios, high damage baseline",
+    x = "Population concentration scenario (environmental axis, image axis)",
+    y = "Per capita impacts"
+  ) +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  ) +
+  scale_x_discrete(labels = custom_labels) +  # Use custom Greek labels for x-axis
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.75)
+  )
+
+# Display the plot
+print(plot_pcimpact_refhighd_sens)
+
+
+
+#Less extreme scenarios
+
+categories <- c("Uniform", "A3", "B3", "C3", "D3", "E3", "F3", "G3", "H3", "I3")
+
+per_capita_impacts <- c(
+  totalimpacts_percapita_refhighdamage_unif,
+  totalimpacts_percapita_squareA3_refhighdamage,
+  totalimpacts_percapita_squareB3_refhighdamage,
+  totalimpacts_percapita_squareC3_refhighdamage,
+  totalimpacts_percapita_squareD3_refhighdamage,
+  totalimpacts_percapita_squareE3_refhighdamage,
+  totalimpacts_percapita_squareF3_refhighdamage,
+  totalimpacts_percapita_squareG3_refhighdamage,
+  totalimpacts_percapita_squareH3_refhighdamage,
+  totalimpacts_percapita_squareI3_refhighdamage
+)
+
+# Create a data frame
+data <- data.frame(
+  Category = factor(categories, levels = categories),
+  Numbers = per_capita_impacts
+)
+
+# Reorder the Category factor based on descending Numbers
+data <- data[order(data$Numbers, decreasing = TRUE), ]
+data$Category <- factor(data$Category, levels = data$Category)
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Define custom labels with Greek letters and subscripts for each pair
+custom_labels <- c(
+  expression("("* alpha[l] * "," * beta[m] * ")" * scriptstyle("3")),
+  expression("("* alpha[l] * "," * beta[h] * ")" * scriptstyle("3")),
+  expression("("* alpha[l] * "," * beta[l] * ")" * scriptstyle("3")),
+  expression("Uniform"),
+  expression("("* alpha[m] * "," * beta[m] * ")" * scriptstyle("3")),
+  expression("("* alpha[m] * "," * beta[h] * ")" * scriptstyle("3")),
+  expression("("* alpha[h] * "," * beta[h] * ")" * scriptstyle("3")),
+  expression("("* alpha[h] * "," * beta[m] * ")" * scriptstyle("3")),
+  expression("("* alpha[m] * "," * beta[l] * ")" * scriptstyle("3")),
+  expression("("* alpha[h] * "," * beta[l] * ")" * scriptstyle("3"))
+)
+
+
+# Create the bar plot using ggplot2
+plot_pcimpact_refhighd_sens2 <- ggplot(data, aes(x = Category, y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(
+    title = "Per capita impacts with less 'extreme' population scenarios, high damage baseline",
+    x = "Population concentration scenario (environmental axis, image axis)",
+    y = "Per capita impacts"
+  ) +
+  scale_fill_gradientn(
+    colors = custom_gradient_colors,
+    guide = "legend",
+    name = "Impacts"
+  ) +
+  scale_x_discrete(labels = custom_labels) +  # Use custom Greek labels for x-axis
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.75)
+  )
+
+# Display the plot
+print(plot_pcimpact_refhighd_sens2)
 
