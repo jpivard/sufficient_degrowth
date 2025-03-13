@@ -59,11 +59,11 @@ library(dplyr)
 
 ###### We first calibrate the parameters #####
 
-R = 12
-p_go = 3
-p_gd = 2
-p_bo = 1.9
-p_bd = 1
+R = 16
+p_go = 3.02
+p_gd = 2.01
+p_bo = 1.95
+p_bd = 1.02
 p <- c(p_go,p_gd,p_bo,p_bd)
 
 d_prime <- 0.1
@@ -606,10 +606,11 @@ consumer_types <- c("GO", "GD", "BO", "BD")
 percentages <- c(marketshare_GO, marketshare_GD, marketshare_BO, marketshare_BD)
 
 # Create a data frame
-data <- data.frame(Category = consumer_types, Percentage = percentages)
+data <- data.frame(Category = factor(consumer_types, levels = c("BO", "BD", "GO", "GD")), 
+                   Percentage = percentages)
 
 # Set colors
-custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen") 
+custom_colors <- c("brown", "lightgrey", "darkgreen", "lightgreen") 
 
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
@@ -618,10 +619,10 @@ plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
             position = position_stack(vjust = 0.5), 
             color = "black", 
             size = 5) +  # Adjust the size if needed
-  labs(title = "Market shares in volume - Discrete lifestyles more impact-intensive, Pigovian tax - High damage, Uniform",
-       x = "Lifestyles",
+  labs(title = "Market shares in volume - Low damage baseline, Uniform distribution of the population",
+       x = "Lifestyles (from the most to the least polluting)",
        y = "Percentage of quantities consumed") +
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
+  scale_y_continuous(labels = scales::percent_format(scale = 1), limits = c(0, 100)) +  # Format y-axis as percentage and normalize the scale
   theme_minimal() +
   scale_fill_manual(values = custom_colors, guide = "none")
 
@@ -1092,10 +1093,11 @@ consumer_types <- c("GO", "GD", "BO", "BD")
 percentages <- c(marketshare_GO_nonuniform, marketshare_GD_nonuniform, marketshare_BO_nonuniform, marketshare_BD_nonuniform)
 
 # Create a data frame
-data <- data.frame(Category = consumer_types, Percentage = percentages)
+data <- data.frame(Category = factor(consumer_types, levels = c("BO", "BD", "GO", "GD")), 
+                   Percentage = percentages)
 
 # Set colors
-custom_colors <- c("lightgrey", "brown", "lightgreen", "darkgreen") 
+custom_colors <- c("brown", "lightgrey", "darkgreen", "lightgreen") 
 
 # Create a bar plot (caption to be changed according to the case tested)
 plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
@@ -1104,16 +1106,14 @@ plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
             position = position_stack(vjust = 0.5), 
             color = "black", 
             size = 5) +  # Adjust the size if needed
-  labs(title = "Market shares - Discrete lifestyles more polluting, High damage, Average environmental concerns, Low image concerns",
-       x = "Lifestyles",
+  labs(title = "Market shares in volume - High environmental concern, Medium image concern - Low damage baseline",
+       x = "Lifestyles (from the most to the least polluting)",
        y = "Percentage of quantities consumed") +
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Format y-axis as percentage
+  scale_y_continuous(labels = scales::percent_format(scale = 1), limits = c(0, 100)) +  # Format y-axis as percentage and normalize the scale
   theme_minimal() +
   scale_fill_manual(values = custom_colors, guide="none")
 
 print(plot)
-
-
 
 
 ## Let's finally compute the associated per capita impacts.
@@ -1166,7 +1166,7 @@ print(plot)
 #And finally per capita impacts, that we compare to the uniform scenario
 #Next lines to be changed depending on cases !
 
-totalimpacts_percapita_lowincomelowdamage_nonunif = total_impacts_nonunif/(size^2)
+totalimpacts_percapita_discrmorepollhighdamage_nonunif = total_impacts_nonunif/(size^2)
 totalimpacts_percapita_reflowdamage_unif = totalimpacts_percapita  
 variation_with_unif = ((totalimpacts_percapita_hugeincome_lowdamage_nonunif- totalimpacts_percapita)/totalimpacts_percapita)*100
 
@@ -1178,6 +1178,48 @@ variation_with_unif = ((totalimpacts_percapita_hugeincome_lowdamage_nonunif- tot
 
 
 #Store and plot per capita impacts in the different scenarios
+
+#totalimpacts_percapita_squareA_discrmorepollhighdamage <- totalimpacts_percapita_discrmorepollhighdamage_nonunif
+#totalimpacts_percapita_squareB_discrmorepollhighdamage <- totalimpacts_percapita_discrmorepollhighdamage_nonunif
+#totalimpacts_percapita_squareC_discrmorepollhighdamage <- totalimpacts_percapita_discrmorepollhighdamage_nonunif
+#totalimpacts_percapita_squareD_discrmorepollhighdamage <- totalimpacts_percapita_discrmorepollhighdamage_nonunif
+#totalimpacts_percapita_squareE_discrmorepollhighdamage <- totalimpacts_percapita_discrmorepollhighdamage_nonunif
+#totalimpacts_percapita_squareF_discrmorepollhighdamage <- totalimpacts_percapita_discrmorepollhighdamage_nonunif
+#totalimpacts_percapita_squareG_discrmorepollhighdamage <- totalimpacts_percapita_discrmorepollhighdamage_nonunif
+#totalimpacts_percapita_squareH_discrmorepollhighdamage <- totalimpacts_percapita_discrmorepollhighdamage_nonunif
+#totalimpacts_percapita_squareI_discrmorepollhighdamage <- totalimpacts_percapita_discrmorepollhighdamage_nonunif
+
+
+#totalimpacts_percapita_squareA_lowincomehighdamage <- totalimpacts_percapita_lowincomehighdamage_nonunif
+#totalimpacts_percapita_squareB_lowincomehighdamage <- totalimpacts_percapita_lowincomehighdamage_nonunif
+#totalimpacts_percapita_squareC_lowincomehighdamage <- totalimpacts_percapita_lowincomehighdamage_nonunif
+#totalimpacts_percapita_squareD_lowincomehighdamage <- totalimpacts_percapita_lowincomehighdamage_nonunif
+#totalimpacts_percapita_squareE_lowincomehighdamage <- totalimpacts_percapita_lowincomehighdamage_nonunif
+#totalimpacts_percapita_squareF_lowincomehighdamage <- totalimpacts_percapita_lowincomehighdamage_nonunif
+#totalimpacts_percapita_squareG_lowincomehighdamage <- totalimpacts_percapita_lowincomehighdamage_nonunif
+#totalimpacts_percapita_squareH_lowincomehighdamage <- totalimpacts_percapita_lowincomehighdamage_nonunif
+#totalimpacts_percapita_squareI_lowincomehighdamage <- totalimpacts_percapita_lowincomehighdamage_nonunif
+
+#totalimpacts_percapita_squareA_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
+#totalimpacts_percapita_squareB_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
+#totalimpacts_percapita_squareC_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
+#totalimpacts_percapita_squareD_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
+#totalimpacts_percapita_squareE_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
+#totalimpacts_percapita_squareF_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
+#totalimpacts_percapita_squareG_taxhighdamage<- totalimpacts_percapita_taxhighdamage_nonunif
+#totalimpacts_percapita_squareH_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
+#totalimpacts_percapita_squareI_taxhighdamage<- totalimpacts_percapita_taxhighdamage_nonunif
+
+
+#totalimpacts_percapita_squareA_refhighdamage <- totalimpacts_percapita_refhighdamage_nonunif
+#totalimpacts_percapita_squareB_refhighdamage <- totalimpacts_percapita_refhighdamage_nonunif
+#totalimpacts_percapita_squareC_refhighdamage <- totalimpacts_percapita_refhighdamage_nonunif
+#totalimpacts_percapita_squareD_refhighdamage <- totalimpacts_percapita_refhighdamage_nonunif
+#totalimpacts_percapita_squareE_refhighdamage <- totalimpacts_percapita_refhighdamage_nonunif
+#totalimpacts_percapita_squareF_refhighdamage <- totalimpacts_percapita_refhighdamage_nonunif
+#totalimpacts_percapita_squareG_refhighdamage <- totalimpacts_percapita_refhighdamage_nonunif
+#totalimpacts_percapita_squareH_refhighdamage <- totalimpacts_percapita_refhighdamage_nonunif
+#totalimpacts_percapita_squareI_refhighdamage <- totalimpacts_percapita_refhighdamage_nonunif
 
 #totalimpacts_percapita_squareA_lowerincomelowdamage <- totalimpacts_percapita_lowincomelowdamage_nonunif
 #totalimpacts_percapita_squareB_lowerincomelowdamage <- totalimpacts_percapita_lowincomelowdamage_nonunif
@@ -1217,14 +1259,6 @@ variation_with_unif = ((totalimpacts_percapita_hugeincome_lowdamage_nonunif- tot
 
 
 
-
-
-
-
-
-
-
-
 #totalimpacts_percapita_squareA_discrmorepolltaxhighdamage <- totalimpacts_percapita_discrmorepolltaxhighdamage_nonunif
 #totalimpacts_percapita_squareB_discrmorepolltaxhighdamage <- totalimpacts_percapita_discrmorepolltaxhighdamage_nonunif
 #totalimpacts_percapita_squareC_discrmorepolltaxhighdamage <- totalimpacts_percapita_discrmorepolltaxhighdamage_nonunif
@@ -1250,18 +1284,6 @@ variation_with_unif = ((totalimpacts_percapita_hugeincome_lowdamage_nonunif- tot
 
 
 
-#totalimpacts_percapita_squareA_GOexcl_lowdamage <- totalimpacts_percapita_GOexcl_lowdamage_nonunif
-#totalimpacts_percapita_squareB_GOexcl_lowdamage <- totalimpacts_percapita_GOexcl_lowdamage_nonunif
-#totalimpacts_percapita_squareC_GOexcl_lowdamage <- totalimpacts_percapita_GOexcl_lowdamage_nonunif
-#totalimpacts_percapita_squareD_GOexcl_lowdamage <- totalimpacts_percapita_GOexcl_lowdamage_nonunif
-#totalimpacts_percapita_squareE_GOexcl_lowdamage <- totalimpacts_percapita_GOexcl_lowdamage_nonunif
-#totalimpacts_percapita_squareF_GOexcl_lowdamage <- totalimpacts_percapita_GOexcl_lowdamage_nonunif
-#totalimpacts_percapita_squareG_GOexcl_lowdamage<- totalimpacts_percapita_GOexcl_lowdamage_nonunif
-#totalimpacts_percapita_squareH_GOexcl_lowdamage <- totalimpacts_percapita_GOexcl_lowdamage_nonunif
-#totalimpacts_percapita_squareI_GOexcl_lowdamage<- totalimpacts_percapita_GOexcl_lowdamage_nonunif
-
-
-
 
 #totalimpacts_percapita_squareA_GOexcl_highdamage <- totalimpacts_percapita_GOexcl_highdamage_nonunif
 #totalimpacts_percapita_squareB_GOexcl_highdamage <- totalimpacts_percapita_GOexcl_highdamage_nonunif
@@ -1284,17 +1306,6 @@ variation_with_unif = ((totalimpacts_percapita_hugeincome_lowdamage_nonunif- tot
 #totalimpacts_percapita_squareH_GOexcl_lowdamage <- totalimpacts_percapita_GOexcl_lowdamage_nonunif
 #totalimpacts_percapita_squareI_GOexcl_lowdamage<- totalimpacts_percapita_GOexcl_lowdamage_nonunif
 
-
-
-#totalimpacts_percapita_squareA_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
-#totalimpacts_percapita_squareB_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
-#totalimpacts_percapita_squareC_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
-#totalimpacts_percapita_squareD_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
-#totalimpacts_percapita_squareE_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
-#totalimpacts_percapita_squareF_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
-#totalimpacts_percapita_squareG_taxhighdamage<- totalimpacts_percapita_taxhighdamage_nonunif
-#totalimpacts_percapita_squareH_taxhighdamage <- totalimpacts_percapita_taxhighdamage_nonunif
-#totalimpacts_percapita_squareI_taxhighdamage<- totalimpacts_percapita_taxhighdamage_nonunif
 
 #totalimpacts_percapita_squareA_higherincomelowdamage <- totalimpacts_percapita_higherincomelowdamage_nonunif
 #totalimpacts_percapita_squareB_higherincomelowdamage <- totalimpacts_percapita_higherincomelowdamage_nonunif
@@ -3357,15 +3368,15 @@ print(final_plot)
 # Data for bar plot
 categories <- c("A", "B","C","D","E","F","G","H","I")
 per_capita_impacts <- c(
-  totalimpacts_percapita_squareA_reflowdamage,
-  totalimpacts_percapita_squareB_reflowdamage,
-  totalimpacts_percapita_squareC_reflowdamage,
-  totalimpacts_percapita_squareD_reflowdamage,
-  totalimpacts_percapita_squareE_reflowdamage,
-  totalimpacts_percapita_squareF_reflowdamage,
-  totalimpacts_percapita_squareG_reflowdamage,
-  totalimpacts_percapita_squareH_reflowdamage,
-  totalimpacts_percapita_squareI_reflowdamage
+  totalimpacts_percapita_squareA_refhighdamage,
+  totalimpacts_percapita_squareB_refhighdamage,
+  totalimpacts_percapita_squareC_refhighdamage,
+  totalimpacts_percapita_squareD_refhighdamage,
+  totalimpacts_percapita_squareE_refhighdamage,
+  totalimpacts_percapita_squareF_refhighdamage,
+  totalimpacts_percapita_squareG_refhighdamage,
+  totalimpacts_percapita_squareH_refhighdamage,
+  totalimpacts_percapita_squareI_refhighdamage
 )
 
 # Create a data frame and order it by Numbers
@@ -3384,15 +3395,15 @@ custom_labels <- c(
   expression("("*alpha[l]*", "*beta[h]*")"),
   expression("("*alpha[l]*", "*beta[l]*")"),
   expression("("*alpha[m]*", "*beta[l]*")"),
-  expression("("*alpha[m]*", "*beta[m]*")"),
   expression("("*alpha[m]*", "*beta[h]*")"),
+  expression("("*alpha[m]*", "*beta[m]*")"),
   expression("("*alpha[h]*", "*beta[l]*")"),
-  expression("("*alpha[h]*", "*beta[m]*")"),
-  expression("("*alpha[h]*", "*beta[h]*")")
+  expression("("*alpha[h]*", "*beta[h]*")"),
+  expression("("*alpha[h]*", "*beta[m]*")")
 )
 
 # Define the baseline impact value
-baseline_impact <- totalimpacts_percapita_reflowdamage_unif   # Replace with actual value
+baseline_impact <- totalimpacts_percapita_refhighdamage_unif   # Replace with actual value
 
 # Find the approximate position where the baseline should be inserted
 data$Rank <- rank(-data$Numbers, ties.method = "first")  # Rank in decreasing order
@@ -3403,7 +3414,7 @@ bar_plot <- ggplot(data, aes(x = reorder(Category, -Numbers), y = Numbers, fill 
   geom_bar(stat = "identity", width = 0.5) +
   scale_fill_gradientn(colors = custom_gradient_colors) +  # Gradient fill applied here
   labs(
-    title = "Average impacts in different population scenarios - Low damage baseline",
+    title = "Average impacts in different population scenarios under Assumption 4A - High damage baseline",
     x = "Population concentration scenario (environmental axis, image axis) - l:low, m:medium, h:high",
     y = "Average impacts"
   ) +
@@ -3421,8 +3432,8 @@ print(bar_plot)
 
 # Load heatmap images 
 heatmap_files <- c("heatmap scen D.png", "heatmap scen A.png", "heatmap scen G.png",
-                   "heatmap scen H.png", "heatmap scen E.png", "heatmap scen B.png",
-                   "heatmap scen I.png", "heatmap scen F.png", "heatmap scen C.png")
+                   "heatmap scen H.png", "heatmap scen B.png", "heatmap scen E.png",
+                   "heatmap scen I.png", "heatmap scen C.png", "heatmap scen F.png")
 
 # Create heatmap plots for each scenario
 for (i in 1:length(heatmap_files)) {
@@ -3447,6 +3458,113 @@ final_plot <- bar_plot / heatmap_grid + plot_layout(heights = c(1, 0.5))  # Adju
 
 # Display the combined plot
 print(final_plot)
+
+
+
+#Same under Assumption 4B
+
+# Data for bar plot
+categories <- c("A", "B","C","D","E","F","G","H","I")
+per_capita_impacts_ref4B <- c(
+  totalimpacts_percapita_squareA_discrmorepollhighdamage,
+  totalimpacts_percapita_squareB_discrmorepollhighdamage,
+  totalimpacts_percapita_squareC_discrmorepollhighdamage,
+  totalimpacts_percapita_squareD_discrmorepollhighdamage,
+  totalimpacts_percapita_squareE_discrmorepollhighdamage,
+  totalimpacts_percapita_squareF_discrmorepollhighdamage,
+  totalimpacts_percapita_squareG_discrmorepollhighdamage,
+  totalimpacts_percapita_squareH_discrmorepollhighdamage,
+  totalimpacts_percapita_squareI_discrmorepollhighdamage
+)
+
+# Create a data frame and order it by Numbers
+data <- data.frame(
+  Category = factor(categories, levels = categories),
+  Numbers = per_capita_impacts_ref4B
+)
+data <- data[order(data$Numbers, decreasing = TRUE), ]  # Order by impacts
+
+# Set custom colors for the gradient fill
+custom_gradient_colors <- colorRampPalette(c("green", "tan", "saddlebrown"))(length(per_capita_impacts))
+
+# Create a custom legend for each bar with Greek symbols
+custom_labels <- c(
+  expression("("*alpha[l]*", "*beta[m]*")"),
+  expression("("*alpha[l]*", "*beta[l]*")"),
+  expression("("*alpha[l]*", "*beta[h]*")"),
+  expression("("*alpha[m]*", "*beta[l]*")"),
+  expression("("*alpha[m]*", "*beta[m]*")"),
+  expression("("*alpha[m]*", "*beta[h]*")"),
+  expression("("*alpha[h]*", "*beta[l]*")"),
+  expression("("*alpha[h]*", "*beta[h]*")"),
+  expression("("*alpha[h]*", "*beta[m]*")")
+)
+
+# Define the baseline impact value
+baseline_impact <- totalimpacts_percapita_discrmorepollhighdamage_unif   # Replace with actual value
+
+# Find the approximate position where the baseline should be inserted
+data$Rank <- rank(-data$Numbers, ties.method = "first")  # Rank in decreasing order
+insert_pos <- sum(data$Numbers > baseline_impact) + 0.5  # Position between bars
+
+# Create the bar plot with a custom legend and vertical line
+bar_plot_4B <- ggplot(data, aes(x = reorder(Category, -Numbers), y = Numbers, fill = Numbers)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  scale_fill_gradientn(colors = custom_gradient_colors) +  # Gradient fill applied here
+  labs(
+    title = "Average impacts in different population scenarios under Assumption 4B - High damage baseline",
+    x = "Population concentration scenario (environmental axis, image axis) - l:low, m:medium, h:high",
+    y = "Average impacts"
+  ) +
+  scale_x_discrete(labels = custom_labels) +  # Use custom labels for the x-axis
+  geom_segment(aes(x = insert_pos, xend = insert_pos, y = 0, yend = baseline_impact), 
+               linetype = "dotted", color = "blue", linewidth = 1) +  # Vertical line with proper height
+  annotate("text", x = insert_pos, y = baseline_impact * 1.05, label = "Uniform", 
+           color = "blue", size = 3, fontface = "bold", hjust = 0.5) +  # Legend above the line
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 15)  # Adjust text size and angle for better readability
+  )
+
+print(bar_plot_4B)
+
+# Load heatmap images 
+heatmap_files <- c("heatmap scen D.png", "heatmap scen G.png", "heatmap scen A.png",
+                   "heatmap scen H.png", "heatmap scen E.png", "heatmap scen B.png",
+                   "heatmap scen I.png", "heatmap scen C.png", "heatmap scen F.png")
+
+# Create heatmap plots for each scenario
+for (i in 1:length(heatmap_files)) {
+  heatmap_image <- readPNG(heatmap_files[i])  # Read the heatmap image
+  heatmap_grob <- rasterGrob(as.raster(heatmap_image), interpolate = TRUE)  # Create a rasterGrob
+  
+  # Create a ggplot for the heatmap
+  heatmap_plot <- ggplot() + 
+    annotation_custom(heatmap_grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) + 
+    theme_void()  # No axes or grid lines
+  
+  # Store the heatmap plot in the list
+  heatmap_plots[[i]] <- heatmap_plot
+}
+
+# Combine bar plot and heatmap plots using patchwork
+# Create a plot grid with reduced spacing
+heatmap_grid <- wrap_plots(heatmap_plots, ncol = length(heatmap_plots))
+
+# Combine bar plot and heatmap grid with less spacing
+final_plot_4B <- bar_plot_4B / heatmap_grid + plot_layout(heights = c(1, 0.5))  # Adjust heights as needed
+
+# Display the combined plot
+print(final_plot_4B)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4116,9 +4234,6 @@ print(plot_pcimpact_refhighd_sens2)
 
 ### Last figure to compare tax and nudges by scenarios in the low damage baseline
 
-
-
-
 # Define scenarios
 scenarios <- c("A", "B", "C", "D", "E", "F", "G", "H", "I")
 
@@ -4245,4 +4360,137 @@ final_plot <- scatter_plot / heatmap_grid + plot_layout(heights = c(1, 0.5))
 
 # Display the final plot
 print(final_plot)
+
+
+
+
+##Same for high damage levels
+
+# Define scenarios
+scenarios <- c("A", "B", "C", "D", "E", "F", "G", "H", "I")
+
+# Define impacts for each scenario (Baseline, Tax, Low Income)
+impacts_baseline_highd <- c(
+  totalimpacts_percapita_squareA_refhighdamage,
+  totalimpacts_percapita_squareB_refhighdamage,
+  totalimpacts_percapita_squareC_refhighdamage,
+  totalimpacts_percapita_squareD_refhighdamage,
+  totalimpacts_percapita_squareE_refhighdamage,
+  totalimpacts_percapita_squareF_refhighdamage,
+  totalimpacts_percapita_squareG_refhighdamage,
+  totalimpacts_percapita_squareH_refhighdamage,
+  totalimpacts_percapita_squareI_refhighdamage
+)
+
+impacts_tax_highd <- c(
+  totalimpacts_percapita_squareA_taxhighdamage,
+  totalimpacts_percapita_squareB_taxhighdamage,
+  totalimpacts_percapita_squareC_taxhighdamage,
+  totalimpacts_percapita_squareD_taxhighdamage,
+  totalimpacts_percapita_squareE_taxhighdamage,
+  totalimpacts_percapita_squareF_taxhighdamage,
+  totalimpacts_percapita_squareG_taxhighdamage,
+  totalimpacts_percapita_squareH_taxhighdamage,
+  totalimpacts_percapita_squareI_taxhighdamage
+)
+
+impacts_low_income_highd <- c(
+  totalimpacts_percapita_squareA_lowincomehighdamage,
+  totalimpacts_percapita_squareB_lowincomehighdamage,
+  totalimpacts_percapita_squareC_lowincomehighdamage,
+  totalimpacts_percapita_squareD_lowincomehighdamage,
+  totalimpacts_percapita_squareE_lowincomehighdamage,
+  totalimpacts_percapita_squareF_lowincomehighdamage,
+  totalimpacts_percapita_squareG_lowincomehighdamage,
+  totalimpacts_percapita_squareH_lowincomehighdamage,
+  totalimpacts_percapita_squareI_lowincomehighdamage
+)
+
+# Rank scenarios by descending order of baseline impacts
+ordered_indices <- order(impacts_baseline_highd, decreasing = TRUE)
+ordered_scenarios_highd <- scenarios[ordered_indices]
+ordered_impacts_baseline_highd <- impacts_baseline_highd[ordered_indices]
+ordered_impacts_tax_highd  <- impacts_tax_highd[ordered_indices]
+ordered_impacts_low_income_highd  <- impacts_low_income_highd[ordered_indices]
+
+
+# Create a data frame respecting the sorted order, aligning the impact values to the sorted scenarios
+data <- data.frame(
+  Scenario = ordered_scenarios_highd,
+  Impact_Baseline = ordered_impacts_baseline_highd,
+  Impact_Tax = ordered_impacts_tax_highd,
+  Impact_Low_Income = ordered_impacts_low_income_highd 
+)
+
+# Transform the data to long format for ggplot (so that each scenario's impacts are stacked)
+data_long <- tidyr::pivot_longer(data, 
+                                 cols = starts_with("Impact"), 
+                                 names_to = "Case", 
+                                 values_to = "Impact")
+
+# Adjust the "Case" variable to represent the different scenarios' impacts
+data_long$Case <- factor(data_long$Case, levels = c("Impact_Baseline", "Impact_Tax", "Impact_Low_Income"))
+
+# Compute the minimum Impact for each Scenario to use as the yend for vertical lines
+min_impacts <- data_long %>%
+  group_by(Scenario) %>%
+  summarize(min_impact = min(Impact))
+
+# Merge min_impacts back into data_long to get the min_impact for each row
+data_long <- left_join(data_long, min_impacts, by = "Scenario")
+
+
+# Create the scatter plot with vertical lines stopping at the lowest point
+scatter_plot_highd <- ggplot(data_long, aes(x = Scenario, y = Impact, color = Impact, shape = Case)) +
+  geom_point(size = 3) +  # Add points
+  geom_segment(aes(xend = Scenario, yend = min_impact), color = "lightblue", size = 1) +  # Vertical lines stopping at the lowest impact
+  scale_color_gradientn(colors = c("green", "tan", "saddlebrown")) +  # Color gradient for Impact values
+  scale_shape_manual(values = c(16, 17, 15), name = "Case") +  # Different shapes for B, T, I
+  labs(
+    title = "Impacts by Cases in Different Population Scenarios - High Damage Baseline",
+    x = "Population Scenarios ranked by descending order of Baseline Impacts",
+    y = "Average Impacts"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),  # Remove text (letters) above x-axis
+    axis.title.x = element_text(margin = margin(t = 10)),  # Adjust space between x-axis title and labels
+    legend.position = "right",  # Move legend to the right
+    axis.ticks.x = element_blank()  # Remove ticks on x-axis
+  ) +
+  scale_x_discrete(limits = ordered_scenarios_highd)  # Order the x-axis according to the ordered_scenarios
+
+# Display the plot
+print(scatter_plot_highd)
+
+
+# Load heatmap images (setting the right order manually to avoid problems)
+heatmap_files <- c("heatmap scen D.png", "heatmap scen A.png", "heatmap scen G.png",
+                   "heatmap scen H.png", "heatmap scen B.png", "heatmap scen E.png",
+                   "heatmap scen I.png", "heatmap scen C.png", "heatmap scen F.png")
+
+# Create heatmap plots for each scenario
+heatmap_plots <- list()
+for (i in seq_along(heatmap_files)) {
+  heatmap_image <- readPNG(heatmap_files[i])  # Read the heatmap image
+  heatmap_grob <- rasterGrob(as.raster(heatmap_image), interpolate = TRUE)  # Create a rasterGrob
+  
+  # Create a ggplot for the heatmap
+  heatmap_plot <- ggplot() + 
+    annotation_custom(heatmap_grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) + 
+    theme_void()  # No axes or grid lines
+  
+  heatmap_plots[[i]] <- heatmap_plot
+}
+
+# Combine scatter plot and heatmap plots using patchwork
+library(patchwork)
+heatmap_grid <- wrap_plots(heatmap_plots, ncol = length(heatmap_plots))
+
+# Combine scatter plot and heatmap grid
+final_plot_highd <- scatter_plot_highd / heatmap_grid + plot_layout(heights = c(1, 0.5))
+
+# Display the final plot
+print(final_plot_highd)
+
 
