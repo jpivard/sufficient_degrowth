@@ -66,6 +66,7 @@ gammaBD = 0.2
 gammaBO = 0.5
 gamma <- c(gammaGO, gammaGD, gammaBO, gammaBD)
 
+theta <- 1000  #random number (see below)
 
 ### The size of the matrices (i.e. the accuracy of the computation) must also be chosen here.
 step = 0.025  #smallest possible step chosen in order to be accurate enough while having reasonable computation times with paralleled code
@@ -77,15 +78,17 @@ size = 1/step + 1
 ### Let us define an optimization function that loops over all possible baskets for each pair of parameters and chooses for each the one maximizing utility.
 
 # Utility Function Definition
-utility_function <- function(x1, x2, x3, x4, alpha, beta, gamma, d_prime) {
+#theta is a 'mute' variable only used for algotirhmic purposes 
+
+utility_function <- function(x1, x2, x3, x4, alpha, beta, gamma, d_prime, theta) {
   u_cons <- log(x1 + x2 + x3 + x4 + .Machine$double.eps)
-  u_damage <- -alpha * d_prime * (gamma[1] * x1 + gamma[2] * x2 + gamma[3] * x3 + gamma[4] * x4)
+  u_damage <- -alpha * (theta + d_prime * (gamma[1] * x1 + gamma[2] * x2 + gamma[3] * x3 + gamma[4] * x4))
   v_status <- beta * (alpha * (x1 + x2) + (1 - alpha) * (x1 + x3))
   return(u_cons + u_damage + v_status)
 }
 
 # Optimization Function
-opti_function <- function(alpha, beta, R, p, gamma, d_prime, step) {
+opti_function <- function(alpha, beta, R, p, gamma, d_prime, theta, step) {
   X <- seq(0, R / min(p), by = step)
   Umax <- -Inf
   xs <- numeric(4)
@@ -97,7 +100,7 @@ opti_function <- function(alpha, beta, R, p, gamma, d_prime, step) {
           if (p[1] * x1 + p[2] * x2 + p[3] * x3 <= R) {
             x4 <- (R - p[1] * x1 - p[2] * x2 - p[3] * x3) / p[4]
             if (x4 >= 0) {
-              U <- utility_function(x1, x2, x3, x4, alpha, beta, gamma, d_prime)
+              U <- utility_function(x1, x2, x3, x4, alpha, beta, gamma, d_prime, theta)
               if (U > Umax) {
                 Umax <- U
                 xs <- c(x1, x2, x3, x4)
@@ -113,7 +116,7 @@ opti_function <- function(alpha, beta, R, p, gamma, d_prime, step) {
 }
 
 # Parallel Grid Search Function
-grid_search_parallel <- function(R, p, gamma, d_prime, step) {
+grid_search_parallel <- function(R, p, gamma, d_prime, theta, step) {
   alphas <- seq(0, 1, by = step)
   betas <- seq(0, 1, by = step)
   rev_betas <- rev(betas)
@@ -129,7 +132,7 @@ grid_search_parallel <- function(R, p, gamma, d_prime, step) {
   cl <- makeCluster(detectCores() - 1) # Use one less core than available
   
   # Export necessary variables and functions to the cluster
-  clusterExport(cl, c("A", "B", "R", "p", "gamma", "d_prime", "step", "opti_function", "utility_function"))
+  clusterExport(cl, c("A", "B", "R", "p", "gamma", "d_prime", "theta", "step", "opti_function", "utility_function"))
   
   # Define the parallelized grid search operation
   grid_search_task <- function(index) {
@@ -139,7 +142,7 @@ grid_search_parallel <- function(R, p, gamma, d_prime, step) {
     alpha <- A[i, j]
     beta <- B[i, j]
     
-    optibasket <- opti_function(alpha, beta, R, p, gamma, d_prime, step)
+    optibasket <- opti_function(alpha, beta, R, p, gamma, d_prime, theta, step)
     xopt <- optibasket$xopt
     yopt <- optibasket$yopt
     l <- which(xopt > 0)
@@ -193,7 +196,7 @@ grid_search_parallel <- function(R, p, gamma, d_prime, step) {
 }
 
 
-results <- grid_search_parallel(R, p, gamma, d_prime, step)
+results <- grid_search_parallel(R, p, gamma, d_prime, theta, step)
 
 # Access results and ensure A, B, alphas, and rev_betas are available globally
 D <- results$D
@@ -209,7 +212,7 @@ alphas <- results$alphas
 rev_betas <- results$rev_betas
 
 
-#Compute the optimal budget shares spent in each good (in percentage) according to intrinsic preferences
+#Computing the budget shares spent in each good (in percentage)
 shareGO<- matrix(0, nrow = nrow(A), ncol = ncol(A))
 shareGD <- matrix(0, nrow = nrow(A), ncol = ncol(A))
 shareBO <- matrix(0, nrow = nrow(A), ncol = ncol(A))
