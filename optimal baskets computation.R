@@ -53,18 +53,18 @@ library(dplyr)
 ###### We first calibrate the parameters (to be changed according to the case tested) #####
 
 R = 16
-p_go = 3
+p_gp= 3
 p_gd = 2
-p_bo = 1.9
+p_bp = 1.9
 p_bd = 1
-p <- c(p_go,p_gd,p_bo,p_bd)
+p <- c(p_gp,p_gd,p_bp,p_bd)
 
 d_prime = 0.1
-gammaGO = 0.15
+gammaGP = 0.15
 gammaGD = 0.05
 gammaBD = 0.2
-gammaBO = 0.5
-gamma <- c(gammaGO, gammaGD, gammaBO, gammaBD)
+gammaBP = 0.5
+gamma <- c(gammaGP, gammaGD, gammaBP, gammaBD)
 
 theta <- 1000  #random number (see below)
 
@@ -213,16 +213,16 @@ rev_betas <- results$rev_betas
 
 
 #Computing the budget shares spent in each good (in percentage)
-shareGO<- matrix(0, nrow = nrow(A), ncol = ncol(A))
+shareGP<- matrix(0, nrow = nrow(A), ncol = ncol(A))
 shareGD <- matrix(0, nrow = nrow(A), ncol = ncol(A))
-shareBO <- matrix(0, nrow = nrow(A), ncol = ncol(A))
+shareBP <- matrix(0, nrow = nrow(A), ncol = ncol(A))
 shareBD <- matrix(0, nrow = nrow(A), ncol = ncol(A))
 
-for (i in 1:nrow(shareGO)) {
-  for (j in 1:ncol(shareGO)) {
-    shareGO[i,j]<- (p[1]*D1[i,j]/R)*100
+for (i in 1:nrow(shareGP)) {
+  for (j in 1:ncol(shareGP)) {
+    shareGP[i,j]<- (p[1]*D1[i,j]/R)*100
     shareGD[i,j]<- (p[2]*D2[i,j]/R)*100
-    shareBO[i,j]<- (p[3]*D3[i,j]/R)*100
+    shareBP[i,j]<- (p[3]*D3[i,j]/R)*100
     shareBD[i,j]<- (p[4]*D4[i,j]/R)*100
   }
 }
@@ -243,18 +243,18 @@ for (i in 1:nrow(shareGO)) {
 # Initialize the matrices 'checkexclusives' and 'checkzeros' with the same dimensions as 'A'
 n_rows <- nrow(A)
 n_cols <- ncol(A)
-checkexclusivesGO <- matrix(NA, nrow = n_rows, ncol = n_cols)
+checkexclusivesGP<- matrix(NA, nrow = n_rows, ncol = n_cols)
 checkexclusivesGD <- matrix(NA, nrow = n_rows, ncol = n_cols)
-checkexclusivesBO <- matrix(NA, nrow = n_rows, ncol = n_cols)
+checkexclusivesBP <- matrix(NA, nrow = n_rows, ncol = n_cols)
 checkzerosBD <- matrix(NA, nrow = n_rows, ncol = n_cols)
 
 
 # We first create matrices with positive coefficients only in the concerned pixels
-for (i in 1:nrow(shareGO)) {
-  for (j in 1:ncol(shareGO)) {
-    checkexclusivesGO[i,j] <- shareGO[i,j] - 98.99
+for (i in 1:nrow(shareGP)) {
+  for (j in 1:ncol(shareGP)) {
+    checkexclusivesGP[i,j] <- shareGP[i,j] - 98.99
     checkexclusivesGD[i,j] <- shareGD[i,j] - 98.99
-    checkexclusivesBO[i,j] <- shareBO[i,j] - 98.99
+    checkexclusivesBP[i,j] <- shareBP[i,j] - 98.99
     checkzerosBD[i,j] <- 1 - shareBD[i,j]  # For BD, we need to check absence of consumption rather than exclusive consumption as we see many points with tiny shares of the budget being spent in the good
   }
 }
@@ -269,17 +269,17 @@ create_dummy_matrix <- function(matrix_input) {
   return(dummy_matrix)
 }
 
-dummy_GOcheck <- create_dummy_matrix(checkexclusivesGO)
+dummy_GPcheck <- create_dummy_matrix(checkexclusivesGP)
 dummy_GDcheck <- create_dummy_matrix(checkexclusivesGD)
-dummy_BOcheck <- create_dummy_matrix(checkexclusivesBO)
+dummy_BPcheck <- create_dummy_matrix(checkexclusivesBP)
 dummy_BDcheck <- create_dummy_matrix(checkzerosBD)
 #For each good, we now have all the pixels where we need to compare utilities outside the grid search.
 
 
 # Initialize matrices to track which utility value is maximized
-maximizing_GO <- matrix(FALSE, nrow = nrow(A), ncol = ncol(A))
+maximizing_GP <- matrix(FALSE, nrow = nrow(A), ncol = ncol(A))
 maximizing_GD <- matrix(FALSE, nrow = nrow(A), ncol = ncol(A))
-maximizing_BO <- matrix(FALSE, nrow = nrow(A), ncol = ncol(A))
+maximizing_BP <- matrix(FALSE, nrow = nrow(A), ncol = ncol(A))
 maximizing_BD <- matrix(FALSE, nrow = nrow(A), ncol = ncol(A))
 
 # Function to compute utility when only one good is consumed (except D4 where it is not consumed)
@@ -334,13 +334,13 @@ compute_utility_with_allocations <- function(alpha, beta, gamma, d_prime, theta,
 }
 
 # Loop through the elements of the dummy matrices
-for (i in 1:nrow(dummy_GOcheck)) {
-  for (j in 1:ncol(dummy_GOcheck)) {
-    if (dummy_GOcheck[i, j] == 1) {
+for (i in 1:nrow(dummy_GPcheck)) {
+  for (j in 1:ncol(dummy_GPcheck)) {
+    if (dummy_GPcheck[i, j] == 1) {
       alpha <- A[i, j]
       beta <- B[i, j]
       
-      # For dummy_GOcheck
+      # For dummy_GPcheck
       result <- compute_utility_exclusive(1, alpha, beta, gamma, d_prime, theta, R, p)
       if (result$U_exclusive > M[i, j]) {
         M[i, j] <- result$U_exclusive
@@ -348,7 +348,7 @@ for (i in 1:nrow(dummy_GOcheck)) {
         D2[i, j] <- result$x_new[2]
         D3[i, j] <- result$x_new[3]
         D4[i, j] <- result$x_new[4]
-        maximizing_GO[i, j] <- TRUE
+        maximizing_GP[i, j] <- TRUE
       }
     }
     
@@ -369,11 +369,11 @@ for (i in 1:nrow(dummy_GOcheck)) {
     }
     
     
-    if (dummy_BOcheck[i, j] == 1) {
+    if (dummy_BPcheck[i, j] == 1) {
       alpha <- A[i, j]
       beta <- B[i, j]
       
-      # For dummy_BOcheck
+      # For dummy_BPcheck
       result <- compute_utility_exclusive(3, alpha, beta, gamma, d_prime, theta, R, p)
       if (result$U_exclusive > M[i, j]) {
         M[i, j] <- result$U_exclusive
@@ -381,7 +381,7 @@ for (i in 1:nrow(dummy_GOcheck)) {
         D2[i, j] <- result$x_new[2]
         D3[i, j] <- result$x_new[3]
         D4[i, j] <- result$x_new[4]
-        maximizing_BO[i, j] <- TRUE
+        maximizing_BP[i, j] <- TRUE
       }
     }
     
@@ -436,19 +436,19 @@ for (i in 1:nrow(D4)) {
 comparison_results <- list(M = M, D1 = D1, D2 = D2, D3 = D3, D4 = D4, DD = DD)
 
 #Now recompute the budget shares 
-for (i in 1:nrow(shareGO)) {
-  for (j in 1:ncol(shareGO)) {
-    shareGO[i,j]<- (p[1]*D1[i,j]/R)*100
+for (i in 1:nrow(shareGP)) {
+  for (j in 1:ncol(shareGP)) {
+    shareGP[i,j]<- (p[1]*D1[i,j]/R)*100
     shareGD[i,j]<- (p[2]*D2[i,j]/R)*100
-    shareBO[i,j]<- (p[3]*D3[i,j]/R)*100
+    shareBP[i,j]<- (p[3]*D3[i,j]/R)*100
     shareBD[i,j]<- (p[4]*D4[i,j]/R)*100
   }
 }
 
 #We now have the 'consolidated' budget share matrices after checking all points in the exclusive zones are really optimized.
 
-### Additional correction step in the case of a tax : as prices are not round numbers anymore, the algorithm has to artificially finish allocating small remaining quantities to another good that the preferred one.
-#For instance, in GD exclusive zone, between 0.3 and 0.6% can be allocated to another lifestyle (BD or GO)
+### Additional correction step in the case of a tax : as prices are not round numbers anymore, the alGPrithm has to artificially finish allocating small remaining quantities to another good that the preferred one.
+#For instance, in GD exclusive zone, between 0.3 and 0.6% can be allocated to another lifestyle (BD or GP)
 #Although this does not matter at individual level, this might affect our collective aggregates artificially hence the need for correction
 #We correct quantities (not spending because what enters following impact or market shares computations is quantities) so that each time a lifestyle represents less than 1% of consumer spending, this remaining 1% is allocated to the otherwise preferred lifestyle.
 #Constraint : quantities should never exceed R/p however, if this is the case the remaining quantity is rounded to R/p
@@ -493,11 +493,11 @@ D3 <- matrices$D3
 D4 <- matrices$D4
 
 #And compute the final spending matrices
-for (i in 1:nrow(shareGO)) {
-  for (j in 1:ncol(shareGO)) {
-    shareGO[i,j]<- (p[1]*D1[i,j]/R)*100
+for (i in 1:nrow(shareGP)) {
+  for (j in 1:ncol(shareGP)) {
+    shareGP[i,j]<- (p[1]*D1[i,j]/R)*100
     shareGD[i,j]<- (p[2]*D2[i,j]/R)*100
-    shareBO[i,j]<- (p[3]*D3[i,j]/R)*100
+    shareBP[i,j]<- (p[3]*D3[i,j]/R)*100
     shareBD[i,j]<- (p[4]*D4[i,j]/R)*100
   }
 }
@@ -520,7 +520,7 @@ generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_
     
     # Plot the heatmap with the reversed matrix using image
     image(1:ncol(share_reversed), 1:nrow(share_reversed), t(share_reversed), col = color_palette, axes = FALSE, 
-          main = paste("% of income spent in", lifestyle, "- BO excluded / High damage"), 
+          main = paste("% of income spent in", lifestyle, "- BP excluded / High damage"), 
           xlab = "alpha", ylab = "beta", xlim = c(1, max_dim), ylim = c(1, max_dim), asp = 1)
     
     # Add axis labels
@@ -541,9 +541,9 @@ generate_heatmap <- function(share, lifestyle, color_palette, legend_title, add_
 
 # Define color palettes for different lifestyles
 num_colors <- 11  # Ensure this matches the number of intervals
-color_palette_GO <- colorRampPalette(c("white", "darkgreen"))(num_colors)
+color_palette_GP <- colorRampPalette(c("white", "darkgreen"))(num_colors)
 color_palette_GD <- colorRampPalette(c("white", "darkgreen"))(num_colors)
-color_palette_BO <- colorRampPalette(c("white", "brown"))(num_colors)
+color_palette_BP <- colorRampPalette(c("white", "brown"))(num_colors)
 color_palette_BD <- colorRampPalette(c("white", "brown"))(num_colors)
 
 # Set up the layout for 2x3 grid of heatmaps and legends
@@ -553,17 +553,17 @@ layout(matrix(c(1, 2, 5, 3, 4, 6), nrow = 2, ncol = 3, byrow = TRUE), widths = c
 par(mar = c(4, 4, 4, 0))
 
 # Generate heatmap plots for different lifestyles
-generate_heatmap(shareGO, "GO", color_palette_GO, "Shares")
+generate_heatmap(shareGP, "GP", color_palette_GP, "Shares")
 generate_heatmap(shareGD, "GD", color_palette_GD, "Shares")
-generate_heatmap(shareBO, "BO", color_palette_BO, "Shares")
+generate_heatmap(shareBP, "BP", color_palette_BP, "Shares")
 generate_heatmap(shareBD, "BD", color_palette_BD, "Shares")
 
 # Add legends
 par(mar = c(4, 0, 4, 0))  # Reduce margins for legends
 plot.new()
-generate_heatmap(NULL, "", color_palette_GO, "Percentages", add_legend = TRUE)
+generate_heatmap(NULL, "", color_palette_GP, "Percentages", add_legend = TRUE)
 plot.new()
-generate_heatmap(NULL, "", color_palette_BO, "Percentages", add_legend = TRUE)
+generate_heatmap(NULL, "", color_palette_BP, "Percentages", add_legend = TRUE)
 
 # Reset the graphical parameters to default
 par(mfrow = c(1, 1))
@@ -575,29 +575,29 @@ par(mfrow = c(1, 1))
 ##Compute and plot 'market shares' of the different goods
 
 #Start by computing total quantities consumed of each good
-quantity_GO = sum(D1)
+quantity_GP = sum(D1)
 quantity_GD = sum(D2)
-quantity_BO = sum(D3)
+quantity_BP = sum(D3)
 quantity_BD = sum(D4)
 total_quantity = sum(D1+D2+D3+D4)
 
 #Then infer the 'market share' of each composite good
-marketshare_GO = (quantity_GO/total_quantity)*100
+marketshare_GP = (quantity_GP/total_quantity)*100
 marketshare_GD = (quantity_GD/total_quantity)*100
-marketshare_BO = (quantity_BO/total_quantity)*100
+marketshare_BP = (quantity_BP/total_quantity)*100
 marketshare_BD = (quantity_BD/total_quantity)*100
 
 #Compute the indicator 'market share of green goods' for each case, to study its relationship with impacts.
-marketshare_green = marketshare_GO + marketshare_GD
+marketshare_green = marketshare_GP + marketshare_GD
 
 
 ## Plot those market shares in an histogram
 
-consumer_types <- c("GO", "GD", "BO", "BD")
-percentages <- c(marketshare_GO, marketshare_GD, marketshare_BO, marketshare_BD)
+consumer_types <- c("GP", "GD", "BP", "BD")
+percentages <- c(marketshare_GP, marketshare_GD, marketshare_BP, marketshare_BD)
 
 # Create a data frame in which goods are ranked from the dirtiest to the cleanest (in absolute, regardless of income effects)
-data <- data.frame(Category = factor(consumer_types, levels = c("BO", "BD", "GO", "GD")), 
+data <- data.frame(Category = factor(consumer_types, levels = c("BP", "BD", "GP", "GD")), 
                    Percentage = percentages)
 
 # Set colors
@@ -610,7 +610,7 @@ plot <- ggplot(data, aes(x = Category, y = Percentage, fill = Category)) +
             position = position_stack(vjust = 0.5), 
             color = "black", 
             size = 5) +  # Adjust the size if needed
-  labs(title = "Market shares in volume - 50% higher income (R=24), Low damage baseline, Uniform distribution of the population",
+  labs(title = "Market shares in volume - GP excluded from the market, High damage baseline, Uniform distribution of the population",
        x = "Lifestyles (from the most to the least polluting)",
        y = "Percentage of quantities consumed") +
   scale_y_continuous(labels = scales::percent_format(scale = 1), limits = c(0, 100)) +  # Format y-axis as percentage and normalize the scale
@@ -636,9 +636,9 @@ P4 <- matrix(0, nrow = size, ncol = size)
 #This way we obtain impacts per basket between 0 and 100, instead of having tiny impact values.
 for (i in 1:nrow(P1)) {
   for (j in 1:ncol(P1)) {
-    P1[i,j]<- 100*d_prime*gammaGO*D1[i,j]
+    P1[i,j]<- 100*d_prime*gammaGP*D1[i,j]
     P2[i,j]<- 100*d_prime*gammaGD*D2[i,j]
-    P3[i,j]<- 100*d_prime*gammaBO*D3[i,j]
+    P3[i,j]<- 100*d_prime*gammaBP*D3[i,j]
     P4[i,j]<- 100*d_prime*gammaBD*D4[i,j]
   }
 }
@@ -647,11 +647,11 @@ for (i in 1:nrow(P1)) {
 P <- P1+P2+P3+P4
 
 #And the contribution of each lifestyle to total pollution
-impact_GO = sum(P1)
+impact_GP = sum(P1)
 impact_GD = sum(P2)
-impact_BO = sum(P3)
+impact_BP = sum(P3)
 impact_BD = sum(P4)
-total_impacts = (impact_GO+impact_GD+impact_BO+impact_BD)
+total_impacts = (impact_GP+impact_GD+impact_BP+impact_BD)
 
 #And finally per capita impacts
 totalimpacts_percapita = total_impacts/(size^2)
@@ -663,13 +663,13 @@ totalimpacts_percapita = total_impacts/(size^2)
 
 
 #Secondary indicator: Plot the relative contribution of each lifestyle to pollution
-contrib_GO = (impact_GO/total_impacts)*100
+contrib_GP = (impact_GP/total_impacts)*100
 contrib_GD = (impact_GD/total_impacts)*100
-contrib_BO = (impact_BO/total_impacts)*100
+contrib_BP = (impact_BP/total_impacts)*100
 contrib_BD = (impact_BD/total_impacts)*100
 
-consumer_types <- c("GO", "GD", "BO", "BD")
-percentages <- c(contrib_GO, contrib_GD, contrib_BO, contrib_BD)
+consumer_types <- c("GP", "GD", "BP", "BD")
+percentages <- c(contrib_GP, contrib_GD, contrib_BP, contrib_BD)
 
 # Create a data frame
 data <- data.frame(Category = consumer_types, Percentage = percentages)
@@ -722,7 +722,7 @@ par(mar = c(5,6,6,7))  # c(bottom, left, top, right) - increase the bottom margi
 # Create the heatmap
 heatmap(P, scale = "none", Rowv = NA, Colv = NA,
         col = color_palette,
-        main = "Env. impacts of a potential consumer - BO excluded from the market, Low damage",
+        main = "Env. impacts of a potential consumer - GP excluded from the market, High damage baseline",
         cexRow = 0.7, cexCol = 0.7,
         ylab = expression(beta))
 
@@ -962,7 +962,7 @@ heatmap(
   Rowv = NA, 
   Colv = NA,
   col = color_palette,
-  main = expression("Density of population - Scenario " * (alpha[l] * "," * beta[h])* ""),  #Example for square A (that we name alpha_l, beta_h in the paper)
+  main = expression("Density of population - Scenario " * (alpha[m] * "," * beta[h])* ""),  #Example for square A (that we name alpha_l, beta_h in the paper)
   cexRow = 0.7, 
   cexCol = 0.7,
   ylab = expression(beta)
@@ -983,47 +983,47 @@ pop <- pop[nrow(pop):1, ]
 #We first define the population of consumers of each lifestyle depending on the scenario
 
 # Step 1 is to define a function to create a dummy matrix corresponding to consumers (or not) of the lifestyle
-dummy_GO <- create_dummy_matrix(D1)
+dummy_GP <- create_dummy_matrix(D1)
 dummy_GD <- create_dummy_matrix(D2)
-dummy_BO <- create_dummy_matrix(D3)
+dummy_BP <- create_dummy_matrix(D3)
 dummy_BD <- create_dummy_matrix(D4)
 
 #Step 2 is to compute the number of people following each lifestyle depending on the population distribution
-go_consumers = pop*dummy_GO
+gp_consumers = pop*dummy_GP
 gd_consumers = pop*dummy_GD
-bo_consumers = pop*dummy_BO
+bp_consumers = pop*dummy_BP
 bd_consumers = pop*dummy_BD
 
 #Before computing per capita impacts, we must rescale population matrices by the size of the population (the square of the size variable) so that a bit more than 1 individual lie in each pixel in a concentrated area, whereas one can find values between 0 and 1 when one gets further from the concentrated area
-go_consumers_rescaled = go_consumers*size^2
+gp_consumers_rescaled = gp_consumers*size^2
 gd_consumers_rescaled = gd_consumers*size^2
-bo_consumers_rescaled = bo_consumers*size^2
+bp_consumers_rescaled = bp_consumers*size^2
 bd_consumers_rescaled = bd_consumers*size^2
 
 #We can then compute the quantities after accounting for the change in population distribution
 #This will yield us the market shares for other population distributions
-quantity_GO_nonuniform = sum(D1*go_consumers_rescaled)
+quantity_GP_nonuniform = sum(D1*gp_consumers_rescaled)
 quantity_GD_nonuniform = sum(D2*gd_consumers_rescaled)
-quantity_BO_nonuniform = sum(D3*bo_consumers_rescaled)
+quantity_BP_nonuniform = sum(D3*bp_consumers_rescaled)
 quantity_BD_nonuniform = sum(D4*bd_consumers_rescaled)
-total_quantity_nonuniform = quantity_GO_nonuniform+quantity_GD_nonuniform+quantity_BO_nonuniform+quantity_BD_nonuniform
+total_quantity_nonuniform = quantity_GP_nonuniform+quantity_GD_nonuniform+quantity_BP_nonuniform+quantity_BD_nonuniform
 
 #Then infer the 'market share' of each composite good, store them for figures (we only leave one for example and clean the rest)
-marketshare_GO_nonuniform = (quantity_GO_nonuniform/total_quantity_nonuniform)*100
+marketshare_GP_nonuniform = (quantity_GP_nonuniform/total_quantity_nonuniform)*100
 marketshare_GD_nonuniform = (quantity_GD_nonuniform/total_quantity_nonuniform)*100
-marketshare_BO_nonuniform = (quantity_BO_nonuniform/total_quantity_nonuniform)*100
+marketshare_BP_nonuniform = (quantity_BP_nonuniform/total_quantity_nonuniform)*100
 marketshare_BD_nonuniform = (quantity_BD_nonuniform/total_quantity_nonuniform)*100
 
-green_marketshare_nonuniform= marketshare_GO_nonuniform + marketshare_GD_nonuniform 
+green_marketshare_nonuniform= marketshare_GP_nonuniform + marketshare_GD_nonuniform 
 #green_marketshare_scenA_lowinclowdam <- green_marketshare_nonuniform
 
 ##Then plot those market shares in an histogram (only thing to change is the title according to the scenario/case)
 
-consumer_types <- c("GO", "GD", "BO", "BD")
-percentages <- c(marketshare_GO_nonuniform, marketshare_GD_nonuniform, marketshare_BO_nonuniform, marketshare_BD_nonuniform)
+consumer_types <- c("GP", "GD", "BP", "BD")
+percentages <- c(marketshare_GP_nonuniform, marketshare_GD_nonuniform, marketshare_BP_nonuniform, marketshare_BD_nonuniform)
 
 # Create a data frame
-data <- data.frame(Category = factor(consumer_types, levels = c("BO", "BD", "GO", "GD")), 
+data <- data.frame(Category = factor(consumer_types, levels = c("BP", "BD", "GP", "GD")), 
                    Percentage = percentages)
 
 # Set colors
@@ -1049,17 +1049,17 @@ print(plot)
 ## Let's finally compute the associated per capita impacts.
 
 #We can easily adapt the pollution matrices according to the population scenario
-P1_nonunif = P1*go_consumers_rescaled
+P1_nonunif = P1*gp_consumers_rescaled
 P2_nonunif = P2*gd_consumers_rescaled
-P3_nonunif = P3*bo_consumers_rescaled
+P3_nonunif = P3*bp_consumers_rescaled
 P4_nonunif = P4*bd_consumers_rescaled
 
 #And infer the new contribution of each lifestyle to total pollution
-impact_GO_nonunif = sum(P1_nonunif)
+impact_GP_nonunif = sum(P1_nonunif)
 impact_GD_nonunif = sum(P2_nonunif)
-impact_BO_nonunif = sum(P3_nonunif)
+impact_BP_nonunif = sum(P3_nonunif)
 impact_BD_nonunif = sum(P4_nonunif)
-total_impacts_nonunif = impact_GO_nonunif+impact_GD_nonunif+impact_BO_nonunif+impact_BD_nonunif
+total_impacts_nonunif = impact_GP_nonunif+impact_GD_nonunif+impact_BP_nonunif+impact_BD_nonunif
 
 #And finally per capita impacts, that we compare to the uniform scenario
 #NB: Next lines to be changed depending on cases !
@@ -1069,13 +1069,13 @@ variation_with_unif = ((totalimpacts_percapita_hugeincome_lowdamage_nonunif- tot
 
 
 #Secondary indicator: Plot the relative contribution of each lifestyle to pollution
-contrib_GO_nonunif = (impact_GO_nonunif/total_impacts_nonunif)*100
+contrib_GP_nonunif = (impact_GP_nonunif/total_impacts_nonunif)*100
 contrib_GD_nonunif = (impact_GD_nonunif/total_impacts_nonunif)*100
-contrib_BO_nonunif = (impact_BO_nonunif/total_impacts_nonunif)*100
+contrib_BP_nonunif = (impact_BP_nonunif/total_impacts_nonunif)*100
 contrib_BD_nonunif = (impact_BD_nonunif/total_impacts_nonunif)*100
 
-consumer_types <- c("GO", "GD", "BO", "BD")
-percentages <- c(contrib_GO_nonunif, contrib_GD_nonunif, contrib_BO_nonunif, contrib_BD_nonunif)
+consumer_types <- c("GP", "GD", "BP", "BD")
+percentages <- c(contrib_GP_nonunif, contrib_GD_nonunif, contrib_BP_nonunif, contrib_BD_nonunif)
 
 # Create a data frame
 data <- data.frame(Category = consumer_types, Percentage = percentages)
@@ -1132,7 +1132,7 @@ print(plot)
 ##First: Uniform distribution of consumers and compare cases only
 
 # Categories and per capita impacts
-categories <- c("Baseline-Low damage", "Baseline-High damage", "Low income-Low damage", "Low income-Low high damage", "Pigovian tax-Low damage", "Pigovian tax-High damage")
+categories <- c("Baseline-Low damage", "Baseline-High damage", "Low income-Low damage", "Low income-Low high damage", "Environmental tax-Low damage", "Environmental tax-High damage")
 per_capita_impacts <- c(
   totalimpacts_percapita_reflowdamage_unif,
   totalimpacts_percapita_refhighdamage_unif,
@@ -1143,7 +1143,7 @@ per_capita_impacts <- c(
 )
 
 # Create a data frame
-data <- data.frame(Category = factor(categories, levels = c("Baseline-Low damage", "Baseline-High damage", "Low income-Low damage", "Low income-Low high damage", "Pigovian tax-Low damage", "Pigovian tax-High damage")), 
+data <- data.frame(Category = factor(categories, levels = c("Baseline-Low damage", "Baseline-High damage", "Low income-Low damage", "Low income-Low high damage", "Environmental tax-Low damage", "Environmental tax-High damage")), 
                    Numbers = per_capita_impacts)
 
 # Reorder the levels of Category based on Numbers in descending order
@@ -1206,7 +1206,7 @@ per_capita_impacts <- c(
 )
 
 cases <- c("Baseline-Low damage", "Baseline-High damage",  
-           "Pigovian tax-Low damage", "Pigovian tax-High damage", 
+           "Environmental tax-Low damage", "Environmental tax-High damage", 
            "Low income-Low damage", "Low income-High damage")
 
 # Create a data frame
@@ -1262,10 +1262,10 @@ custom_labels2 <- c(
 )
 
 # Define categories and impacts
-categories <- rep(c("Baseline", "Pigovian tax"), 7)  # 14 categories, 7 pairs
+categories <- rep(c("Baseline", "Environmental tax"), 7)  # 14 categories, 7 pairs
 group_labels <- rep(1:7, each = 2)  # Group pairs to apply custom labels
 
-# Define impact values for each bar (Baseline and Pigovian tax for each pair)
+# Define impact values for each bar (Baseline and Environmental tax for each pair)
 per_capita_impacts <- c(
   totalimpacts_percapita_refhighdamage_unif,
   totalimpacts_percapita_taxhighdamage_unif,
@@ -1297,14 +1297,14 @@ abs_percentage_changes <- abs(percentage_changes)
 # Rank scenarios in descending order
 rank_order <- order(abs_percentage_changes, decreasing = TRUE)
 
-# Reorder labels and impact values while keeping Baseline & Pigovian tax pairs together
+# Reorder labels and impact values while keeping Baseline & Environmental tax pairs together
 custom_labels2_sorted <- custom_labels2[rank_order]
 sorted_indices <- as.vector(rbind(rank_order * 2 - 1, rank_order * 2))  # Keep pairs together
 
 # Reorder the data based on sorted indices
 data_sorted <- data.frame(
   Group = factor(rep(custom_labels2_sorted, each = 2), levels = custom_labels2_sorted),
-  Category = rep(c("Baseline", "Pigovian tax"), 7),
+  Category = rep(c("Baseline", "Environmental tax"), 7),
   Numbers = as.numeric(per_capita_impacts[sorted_indices])
 )
 
@@ -1334,7 +1334,7 @@ bar_plot <- ggplot(data_sorted, aes(x = Group, y = Numbers, fill = Category)) +
     x = "Scenario (sorted)",
     y = "Per capita impacts"
   ) + 
-  scale_fill_manual(values = c("Baseline" = "brown", "Pigovian tax" = "green")) +  # Categorical colors
+  scale_fill_manual(values = c("Baseline" = "brown", "Environmental tax" = "green")) +  # Categorical colors
   scale_x_discrete(labels = custom_labels2) +  
   theme_minimal() +
   theme(
@@ -1833,9 +1833,30 @@ bar_plot <- ggplot(data, aes(x = reorder(Category, -Numbers), y = Numbers, fill 
 
 print(bar_plot)
 
+# Load heatmap images : heatmaps are different here!
+heatmap_files_scen2 <- c("scenario D2.png", "scenario A2.png", "scenario G2.png",
+                     "scenario H2.png", "scenario E2.png", "scenario B2.png",
+                     "scenario I2.png", "scenario C2.png", "scenario F2.png")
 
-# Combine bar plot and heatmap grid (same order) with less spacing
-final_plot <- bar_plot / heatmap_grid + plot_layout(heights = c(1, 0.5))  # Adjust heights as needed
+# Initialize an empty list to store heatmap plots
+heatmap_plots_scen2 <- vector("list", length(heatmap_files_scen2))
+
+# Create heatmap plots for each scenario
+for (i in seq_along(heatmap_files_scen2)) {
+  heatmap_image_scen2 <- readPNG(heatmap_files_scen2[i])  # Read the heatmap image
+  heatmap_grob_scen2 <- rasterGrob(as.raster(heatmap_image_scen2), interpolate = TRUE)  # Create a rasterGrob
+  
+  # Create a ggplot for the heatmap
+  heatmap_plots_scen2[[i]] <- ggplot() + 
+    annotation_custom(heatmap_grob_scen2, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) + 
+    theme_void()  # No axes or grid lines
+}
+
+# Combine bar plot and heatmap plots using patchwork
+heatmap_grid_scen2 <- wrap_plots(heatmap_plots_scen2, ncol = length(heatmap_plots_scen2))
+
+# Combine bar plot and heatmap grid with less spacing
+final_plot <- bar_plot / heatmap_grid_scen2 + plot_layout(heights = c(1, 0.5))  # Adjust heights as needed
 
 # Display the combined plot
 print(final_plot)
